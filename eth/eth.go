@@ -32,7 +32,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) {
         log.Fatal(err.Error())
     }
 
-    fmt.Println("Generating Key...")
+    fmt.Println("Generating Key....")
 
     // Use BIP-44 derivation path for Ethereum: m/44'/60'/0'/0/0
     purpose, err := masterKey.NewChildKey(44)
