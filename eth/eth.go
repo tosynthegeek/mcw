@@ -1,20 +1,24 @@
 package eth
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"log"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
-	"golang.org/x/crypto/sha3"
 )
 
 // HardenedOffset is the constant used for hardened key derivation
-const HardenedOffset = 0x80000000
+// const HardenedOffset = 0x80000000
 
 // WalletFromMnemonic generates a wallet from a given mnemonic and passphrase,
 // and prints the mnemonic, seed, private key, public key, and Ethereum address.
 func WalletFromMnemonic(mnemonic string, passphrase string) {
+
+    fmt.Println("we have a connection")
     fmt.Println("Your mnemonic phrase:")
     fmt.Println(mnemonic)
 
@@ -27,7 +31,6 @@ func WalletFromMnemonic(mnemonic string, passphrase string) {
     if err != nil {
         log.Fatal(err.Error())
     }
-    fmt.Printf("Private Key: %x\n",masterKey)
 
     fmt.Println("Generating Key...")
 
@@ -60,20 +63,26 @@ func WalletFromMnemonic(mnemonic string, passphrase string) {
     // Obtain and print the private key from the derived key
     privateKey := addressIndex.Key
     fmt.Printf("Private Key: %x\n", privateKey)
+    privateKeyEcdsa, err:= crypto.ToECDSA(privateKey)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    privateKeyBytes:= crypto.FromECDSA(privateKeyEcdsa)
+    fmt.Println("Private Key Stripped: ")
+    fmt.Println(hexutil.Encode(privateKeyBytes)[2:])
+    publicKeyCrypto :=privateKeyEcdsa.Public()
+    publicKeyEcdsa, ok:= publicKeyCrypto.(*ecdsa.PublicKey)
+    if !ok {
+        log.Fatal(err.Error())
+    }
 
-    // Obtain the public key from the derived key
-    pubKey := addressIndex.PublicKey().Key
-    fmt.Printf("Public Key: %x\n", pubKey)
-
-    // Compute Ethereum address by hashing the public key with Keccak256
-    hash := sha3.NewLegacyKeccak256()
-    hash.Write(pubKey[1:]) // Exclude the first byte (format byte)
-    address := hash.Sum(nil)
-
-    fmt.Println("Ethereum Address (Hex):")
-    fmt.Printf("0x%x\n", address[12:])
+    publicKeyBytes := crypto.FromECDSAPub(publicKeyEcdsa)
+    fmt.Println("Public Key: ")
+    fmt.Println(hexutil.Encode(publicKeyBytes)[4:])   
+    address := crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
+    fmt.Println("Try Go Ethereum Address: ")
+    fmt.Println(address)  
 }
-
 //Create wallet
 // Get Contract
 // Get Tx History for address
