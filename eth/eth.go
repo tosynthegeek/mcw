@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -181,7 +180,6 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
         fmt.Errorf("Error parsing abi: %w", err)
     }
 
-
     contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
 
     balance := new(big.Int)
@@ -199,13 +197,14 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
 	}
 }
 
-func JsonToABI(abiData []interface{}) (abi.ABI, error) {
-    jsonData, err := json.Marshal(abiData)
-    if err != nil {
-        fmt.Errorf("error marshalling interface slice to JSON: %w", err)
-    }
+//JsonToABI converts imported ABI in JSON into type abi.ABI
+func JsonToABI(abiData []byte) (abi.ABI, error) {
+    // jsonData, err := json.Marshal(abiData)
+    // if err != nil {
+    //     fmt.Errorf("error marshalling interface slice to JSON: %w", err)
+    // }
 
-    parsedABI, err := abi.JSON(bytes.NewReader(jsonData))
+    parsedABI, err := abi.JSON(bytes.NewReader(abiData))
 	if err != nil {
 		log.Fatal("failed to parse ABI: ", err)
 	}

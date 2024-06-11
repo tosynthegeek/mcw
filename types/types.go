@@ -29,6 +29,6 @@ type BalancePayload struct {
 	RpcUrl 			string
 	Network 		string
 	TokenAddress 	string
-	ABI				[]interface{}
+	ABI				[]byte
 }
 
