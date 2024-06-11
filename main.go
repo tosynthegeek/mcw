@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"mcw/eth"
 	"mcw/types"
@@ -32,5 +33,8 @@ func main() {
 		TokenAddress: "0xa74476443119A942dE498590Fe1f2454d7D4aC0d",
 		ABI: abiByte,
 	}
-	eth.GetTokenBalance(bp)
+	balance:= eth.GetTokenBalance(bp)
+	fmt.Println("Address: ", balance.Address)
+	fmt.Println("Balance: ", balance.Balance.String())
+	fmt.Printf("Token Address: %s\n", *balance.TokenAddress)
 }

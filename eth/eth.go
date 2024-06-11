@@ -175,25 +175,28 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
     client:= client.EthClient(balancePayload.RpcUrl)
     account:= common.HexToAddress(balancePayload.Address)
     tokenAddress:= common.HexToAddress(balancePayload.TokenAddress)
-    abiData, err:= JsonToABI(balancePayload.ABI)
+    abiData, err:= JsonToABI(balancePayload.ABI)    
     if err != nil {
         fmt.Errorf("Error parsing abi: %w", err)
     }
 
+    fmt.Println("Token Address: ", tokenAddress)
+
     contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
 
-    balance := new(big.Int)
-	callOpts := &bind.CallOpts{}
- 
-	err = contract.Call(callOpts, &[]interface{}{interface{}(balance)}, "balanceOf", account)
+    var balance *big.Int
+    result:= []interface{}{&balance}
+	callOpts:= &bind.CallOpts{}
+    
+	err = contract.Call(callOpts, &result, "balanceOf", account)
 	if err != nil {
 		log.Fatal("failed to call balanceOf function: ", err)
 	}
 
     return types.Balance{
-		Address:    balancePayload.Address,
-		Balance:    *balance,  
-		TokenAddress: &balancePayload.TokenAddress, // assuming `types.Balance` has an `Amount` field of type `*big.Int`
+		Address:        balancePayload.Address,
+		Balance:        *balance,  
+		TokenAddress:   &balancePayload.TokenAddress, // assuming `types.Balance` has an `Amount` field of type `*big.Int`
 	}
 }
 
@@ -203,7 +206,7 @@ func JsonToABI(abiData []byte) (abi.ABI, error) {
     // if err != nil {
     //     fmt.Errorf("error marshalling interface slice to JSON: %w", err)
     // }
-
+    
     parsedABI, err := abi.JSON(bytes.NewReader(abiData))
 	if err != nil {
 		log.Fatal("failed to parse ABI: ", err)
