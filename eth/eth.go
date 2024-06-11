@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"mcw/types"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -12,18 +13,19 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-// WalletFromMnemonic generates a wallet from a given mnemonic and passphrase(password),
-// and prints the private key, public key, and Ethereum address.
-func WalletFromMnemonic(mnemonic string, passphrase string) (privateKey string, publicKey string, address string){
+// WalletFromMnemonic generates an Ethereum wallet from a given mnemonic and passphrase (password).
+// It returns a Wallet struct containing the mnemonic, private key, public key, and address.
+func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
 
     fmt.Println("we have a connection")
     fmt.Println("Check if Mnemonic is valid")
-    vaildity:= bip39.IsMnemonicValid(mnemonic)
-    if !vaildity{
-        fmt.Println("Mnemonic is not valid")
+
+    if !bip39.IsMnemonicValid(mnemonic) {
+        log.Fatal("Mnemonic is not valid")
     }
 
     fmt.Println("Your mnemonic phrase: ", mnemonic)
+
     // Generate seed from mnemonic and passphrase
     seed := bip39.NewSeed(mnemonic, passphrase)
     fmt.Printf("Seed: %x\n", seed)
@@ -69,7 +71,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (privateKey string, 
         log.Fatal(err.Error())
     }
     bytesKey:= crypto.FromECDSA(ecdsaKey)
-    privateKey = hexutil.Encode(bytesKey)[2:]
+    privateKey:= hexutil.Encode(bytesKey)[2:]
 
     fmt.Println("Private Key: ", privateKey) // 1efd19848ac5539bcc848450f8d8cf4dc9ceb7de95c7a80e209a1d84546f2b79
 
@@ -80,39 +82,45 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (privateKey string, 
     }
 
     publicKeyBytes := crypto.FromECDSAPub(publicKeyEcdsa)
-    publicKey = hexutil.Encode(publicKeyBytes)[4:]
-    address = crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
+    publicKey:= hexutil.Encode(publicKeyBytes)[4:]
+    address:= crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
 
     fmt.Println("Public Key: ", publicKey)  // 8b4dfac98e48e3e9408962fc995732977c22354e2499d65e47c912cc7ffd4c58699bb57d4b2c921d08311722d70678ad4cd7cbe605b25b1797549e7f0e220d2f
     fmt.Println("Ethereum Address: ", address) // 0xF890496Ac661FC846F6F0eB43c33947833c11bf8
 
-    return
+    wallet:= types.Wallet {
+        Mnemonic:   mnemonic,
+        PrivateKey: privateKey,
+        PublicKey:  publicKey,
+        Address:    address,
+    }
+    return wallet
 }
 
 // CreateWallet generates a wallet from a given passphrase (password),
-// and prints the mnemonic, private key, public key, and Ethereum address.
-func CreateWallet(passphrase string) (mnemonic string, privateKey string, publicKey string, address string) {
+// and returns a Wallet struct containing the mnemonic, private key, public key, and Ethereum address.
+func CreateWallet(passphrase string) types.Wallet {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         log.Fatal(err.Error())
     }
-    mnemonic, err = bip39.NewMnemonic(entropy)
+    mnemonic, err:= bip39.NewMnemonic(entropy)
     if err != nil {
         log.Fatal(err.Error())
     }
     
-    privateKey, publicKey, address = WalletFromMnemonic(mnemonic, passphrase)
+    wallet:= WalletFromMnemonic(mnemonic, passphrase)
 
     fmt.Println("Mnemonic: ", mnemonic)
-    fmt.Println("Private Key: ", privateKey)
-    fmt.Println("Public Key: ", publicKey)
-    fmt.Println("Address: ", address)
+    fmt.Println("Private Key: ", wallet.PrivateKey)
+    fmt.Println("Public Key: ", wallet.PublicKey)
+    fmt.Println("Address: ", wallet.Address)
 
-    return
+    return wallet
 }
 
 // Get address from Private Key
-func GetAddressFromPrivKateKey(privateKey string) (address string) {
+func GetAddressFromPrivKateKey(privateKey string) types.Address {
     privKeyBytes, err := hex.DecodeString(privateKey)
     if err != nil {
         fmt.Println("Error Decoding Private Key: ", err)
@@ -128,10 +136,15 @@ func GetAddressFromPrivKateKey(privateKey string) (address string) {
     if !ok {
         log.Fatal(err.Error())
     }
-    address = crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
+    address:= crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
     fmt.Println("Address: ", address)
-    return
+    
+    return types.Address {
+        Address: address,
+        PrivateKey: privateKey,
+    }
 }
+
 // Get Tx History for address
 // Get Balance
 // Transfer ETH
