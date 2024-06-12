@@ -11,9 +11,11 @@ import (
 	"mcw/client"
 	types "mcw/types"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -221,11 +223,14 @@ func GetTxByHash(hash string, rpcUrl string) (*ethTypes.Transaction, bool ){
         log.Fatal(err.Error())
     }
 
+    fmt.Println("Tx Recipient: ", tx.To())
+    fmt.Println("Tx Hash: ", tx.Hash())
+
     return tx, isPending
 }
 
 // TransferETH sends ETH from one address to another 
-func TransferETH(transferPayload types.TransferPayload) {
+func TransferETH(transferPayload types.TransferETHPayload) (types.TransferData) {
     client:= client.EthClient(transferPayload.RpcUrl)
     
     var gasPrice    *big.Int
@@ -298,7 +303,125 @@ func TransferETH(transferPayload types.TransferPayload) {
     }
 
     fmt.Printf("tx sent: %s", signedTx.Hash().Hex())
+    reciept, err:= bind.WaitMined(context.Background(), client, signedTx)
+    if err != nil {
+        fmt.Errorf("transaction mining failed: %v", err)
     }
+
+    return types.TransferData{
+        Hash: signedTx.Hash().Hex(),
+        FromAddress: fromAddress.Hex(),
+        ToAddress: transferPayload.Recipient,
+        Amount: &transferPayload.Amount,
+        GasLimit: gasLimit,
+        GasPrice: gasPrice,
+        BlockNumber: reciept.BlockNumber.Uint64(),
+    }
+}
 // Transfer other tokens
+func TransferToken(transferPayload types.TransferTokenPayload) types.TransferData {
+    var gasPrice    *big.Int
+    var gasLimit    uint64
+    var nonce       uint64
+    var err         error
+
+    client:= client.EthClient(transferPayload.RpcUrl)
+    recipient:= common.HexToAddress(transferPayload.Recipient)
+    tokenAddress:= common.HexToAddress(transferPayload.TokenAddress)
+
+    privateKey, err:= crypto.HexToECDSA(transferPayload.PrivateKey)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    publicKey:= privateKey.Public()
+    publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+    if !ok {
+        log.Fatal("error casting public key to ECDSA")
+    }
+
+    fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+    
+    signature:= []byte("transfer(address,uint256)")
+    hash:= sha3.NewLegacyKeccak256()
+    hash.Write(signature)
+    methodID:= hash.Sum(nil)[:4]
+    paddedAddress := common.LeftPadBytes(recipient.Bytes(), 32)
+    paddedAmount := common.LeftPadBytes(transferPayload.Amount.Bytes(), 32)
+
+    var data []byte
+    data = append(data, methodID...)
+    data = append(data, paddedAddress...)
+    data = append(data, paddedAmount...)
+
+    if transferPayload.GasPrice == nil {
+        gasPrice, err = client.SuggestGasPrice(context.Background())
+        if err != nil {
+           fmt.Errorf("failed to suggest gas price: %v", err)
+        }
+        fmt.Println("Gas Price: ", gasPrice)
+    } else {
+        gasPrice = transferPayload.GasPrice
+        fmt.Println("Gas Price: ", gasPrice)
+    }
+
+    if transferPayload.GasLimit == nil {
+        gasLimit, err = client.EstimateGas(context.Background(), ethereum.CallMsg{
+            To: &recipient,
+            Data: data,
+        })
+        fmt.Println("Gas Limit: ", gasLimit)
+    } else {
+        gasLimit = *transferPayload.GasLimit
+        fmt.Println("Gas Limit: ", gasLimit)
+    }
+    
+    if transferPayload.Nonce == nil {
+        nonce, err = client.PendingNonceAt(context.Background(), fromAddress)
+        if err != nil {
+            log.Fatal(err.Error())
+        }
+        fmt.Println("Nonce: ", nonce)
+    } else {
+        nonce = *transferPayload.Nonce
+        fmt.Println("Nonce: ", nonce)
+    }
+
+    fmt.Println("Gas Price Used: ", gasPrice)
+    fmt.Println("Gas Limit Used: ", gasLimit)
+    fmt.Println("Nonce Used: ", nonce)
+
+    tx:= ethTypes.NewTransaction(nonce, tokenAddress, &transferPayload.Amount, gasLimit, gasPrice, data)
+    chainID,err:= client.ChainID(context.Background())
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    signedTx, err:= ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(chainID), privateKey)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    err = client.SendTransaction(context.Background(), signedTx)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    
+    fmt.Printf("tx sent: %s", signedTx.Hash().Hex())
+    reciept, err:= bind.WaitMined(context.Background(), client, signedTx)
+    if err != nil {
+        fmt.Errorf("transaction mining failed: %v", err)
+    }
+
+    return types.TransferData{
+        Hash: signedTx.Hash().Hex(),
+        FromAddress: fromAddress.Hex(),
+        ToAddress: transferPayload.Recipient,
+        Amount: &transferPayload.Amount,
+        GasLimit: gasLimit,
+        GasPrice: gasPrice,
+        BlockNumber: reciept.BlockNumber.Uint64(),
+    }
+}
 // Get Token Info
 // SC call

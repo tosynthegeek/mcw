@@ -32,14 +32,35 @@ type BalancePayload struct {
 	ABI				[]byte
 }
 
-type TransferPayload struct{
-	PrivateKey	string
-	RpcUrl 		string
-	Recipient	string
-	Amount		big.Int
-	GasPrice	*big.Int
-	GasLimit	*uint64
-	Nonce		*uint64
-	Network		*string
+type TransferETHPayload struct{
+	PrivateKey		string
+	RpcUrl 			string
+	Recipient		string
+	Amount			big.Int
+	GasPrice		*big.Int
+	GasLimit		*uint64
+	Nonce			*uint64
+	Network			*string
 }
 
+type TransferTokenPayload struct{
+	PrivateKey		string
+	RpcUrl 			string
+	Recipient		string
+	TokenAddress	string
+	Amount			big.Int
+	GasPrice		*big.Int
+	GasLimit		*uint64
+	Nonce			*uint64
+	Network			*string
+}
+
+type TransferData struct {
+	Hash        string  // Transaction hash
+    FromAddress string  // Sender's address
+    ToAddress   string  // Recipient's address
+    Amount      *big.Int // Amount transferred
+    GasLimit     uint64   // Gas used for the transaction
+    GasPrice    *big.Int // Gas price used
+    BlockNumber uint64
+}

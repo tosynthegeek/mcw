@@ -43,15 +43,18 @@ func main() {
 	txHash:= "0x5d49fcaa394c97ec8a9c3e7bd9e8388d420fb050a52083ca52ff24b3b65bc9c2"
 	eth.GetTxByHash(txHash, bp.RpcUrl)
 
-	tp:= types.TransferPayload {
+	tp:= types.TransferETHPayload {
 		PrivateKey: " ",
-		RpcUrl: " ",
+		RpcUrl: "",
 		Recipient: "0xDA01D79Ca36b493C7906F3C032D2365Fb3470aEC",
 		Amount: *big.NewInt(10000000),
 		Network: &network,
 	}
 
-	fmt.Println("Initiating Tx....")
+	hash:= "0xbbfe64b5619fcee225294c18575b49e41b647be7737dbfab47261b70a80de8ca"
+	// fmt.Println("Initiating Tx....")
 	
-	eth.TransferETH(tp)
+	// eth.TransferETH(tp)
+
+	eth.GetTxByHash(hash, tp.RpcUrl)
 }
