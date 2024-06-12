@@ -9,12 +9,14 @@ import (
 	"log"
 	"math/big"
 	"mcw/client"
-	"mcw/types"
+	types "mcw/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -26,7 +28,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
 
     fmt.Println("we have a connection")
     fmt.Println("Check if Mnemonic is valid")
-
+   
     if !bip39.IsMnemonicValid(mnemonic) {
         log.Fatal("Mnemonic is not valid")
     }
@@ -177,7 +179,7 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
     tokenAddress:= common.HexToAddress(balancePayload.TokenAddress)
     abiData, err:= JsonToABI(balancePayload.ABI)    
     if err != nil {
-        fmt.Errorf("Error parsing abi: %w", err)
+        fmt.Println(err.Error())
     }
 
     fmt.Println("Token Address: ", tokenAddress)
@@ -215,10 +217,18 @@ func JsonToABI(abiData []byte) (abi.ABI, error) {
     return parsedABI, nil
 }
 
-
 // Get Tx History for address
+func GetTxByHash(hash string, rpcUrl string) (*ethTypes.Transaction, bool ){
+    client:= client.EthClient(rpcUrl)
+    txHash:= common.HexToHash(hash)
+    tx, isPending, err:= client.TransactionByHash(context.Background(), txHash)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    return tx, isPending
+}
 // Transfer ETH
 // Transfer other tokens
-// Get Tx using the hash
 // Get Token Info
 // SC call
