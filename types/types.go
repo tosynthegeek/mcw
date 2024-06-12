@@ -27,8 +27,19 @@ type Balance struct {
 type BalancePayload struct {
 	Address 		string
 	RpcUrl 			string
-	Network 		string
+	Network 		*string
 	TokenAddress 	string
 	ABI				[]byte
+}
+
+type TransferPayload struct{
+	PrivateKey	string
+	RpcUrl 		string
+	Recipient	string
+	Amount		big.Int
+	GasPrice	*big.Int
+	GasLimit	*uint64
+	Nonce		*uint64
+	Network		*string
 }
 

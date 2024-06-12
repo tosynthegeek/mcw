@@ -38,7 +38,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
     // Generate seed from mnemonic and passphrase
     seed := bip39.NewSeed(mnemonic, passphrase)
     fmt.Printf("Seed: %x\n", seed)
-
+    
     // Generate master key from seed
     masterKey, err := bip32.NewMasterKey(seed)
     if err != nil {
@@ -204,11 +204,6 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
 
 //JsonToABI converts imported ABI in JSON into type abi.ABI
 func JsonToABI(abiData []byte) (abi.ABI, error) {
-    // jsonData, err := json.Marshal(abiData)
-    // if err != nil {
-    //     fmt.Errorf("error marshalling interface slice to JSON: %w", err)
-    // }
-    
     parsedABI, err := abi.JSON(bytes.NewReader(abiData))
 	if err != nil {
 		log.Fatal("failed to parse ABI: ", err)
@@ -228,7 +223,82 @@ func GetTxByHash(hash string, rpcUrl string) (*ethTypes.Transaction, bool ){
 
     return tx, isPending
 }
-// Transfer ETH
+
+// TransferETH sends ETH from one address to another 
+func TransferETH(transferPayload types.TransferPayload) {
+    client:= client.EthClient(transferPayload.RpcUrl)
+    
+    var gasPrice    *big.Int
+    var gasLimit    uint64
+    var nonce       uint64
+    var err         error
+
+    recipient:= common.HexToAddress(transferPayload.Recipient)
+
+    privateKey, err:= crypto.HexToECDSA(transferPayload.PrivateKey)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    publicKey:= privateKey.Public()
+    publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+    if !ok {
+        log.Fatal("error casting public key to ECDSA")
+    }
+
+    fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+    if transferPayload.GasPrice == nil {
+        gasPrice, err = client.SuggestGasPrice(context.Background())
+        if err != nil {
+           fmt.Errorf("failed to suggest gas price: %v", err)
+        }
+        fmt.Println("Gas Price: ", gasPrice)
+    } else {
+        gasPrice = transferPayload.GasPrice
+        fmt.Println("Gas Price: ", gasPrice)
+    }
+
+    if transferPayload.GasLimit == nil {
+        gasLimit = uint64(21000)
+        fmt.Println("Gas Limit: ", gasLimit)
+    } else {
+        gasLimit = *transferPayload.GasLimit
+        fmt.Println("Gas Limit: ", gasLimit)
+    }
+    
+    if transferPayload.Nonce == nil {
+        nonce, err = client.PendingNonceAt(context.Background(), fromAddress)
+        if err != nil {
+            log.Fatal(err.Error())
+        }
+        fmt.Println("Nonce: ", nonce)
+    } else {
+        nonce = *transferPayload.Nonce
+        fmt.Println("Nonce: ", nonce)
+    }
+
+    fmt.Println("Gas Price Used: ", gasPrice)
+    fmt.Println("Gas Limit Used: ", gasLimit)
+    fmt.Println("Nonce Used: ", nonce)
+
+    tx:= ethTypes.NewTransaction(nonce, recipient, &transferPayload.Amount, gasLimit, gasPrice, nil)
+    chainID, err:= client.NetworkID(context.Background())
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    signedTx, err:= ethTypes.SignTx(tx, ethTypes.NewEIP155Signer(chainID), privateKey)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    err = client.SendTransaction(context.Background(), signedTx)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("tx sent: %s", signedTx.Hash().Hex())
+    }
 // Transfer other tokens
 // Get Token Info
 // SC call
