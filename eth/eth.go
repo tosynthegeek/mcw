@@ -489,4 +489,5 @@ func GetTokenInfo(tokenInfoPayload types.TokenInfoPayload) types.TokenInfo {
         TokenAddress: tokenInfoPayload.TokenAddress,
     }
 }
+
 // SC call
