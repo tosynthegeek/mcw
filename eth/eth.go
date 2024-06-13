@@ -111,7 +111,7 @@ func CreateWallet(passphrase string) types.Wallet {
     }
     
     wallet:= WalletFromMnemonic(mnemonic, passphrase)
-    
+
     return wallet
 }
 
@@ -133,7 +133,6 @@ func GetAddressFromPrivKateKey(privateKey string) types.Address {
         log.Fatal(err.Error())
     }
     address:= crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
-    fmt.Println("Address: ", address)
     
     return types.Address{
         Address: address,
@@ -168,8 +167,6 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
     if err != nil {
         fmt.Println(err.Error())
     }
-
-    fmt.Println("Token Address: ", tokenAddress)
 
     contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
     
@@ -209,9 +206,6 @@ func GetTxByHash(hash string, rpcUrl string) (*ethTypes.Transaction, bool ){
         log.Fatal(err.Error())
     }
 
-    fmt.Println("Tx Recipient: ", tx.To())
-    fmt.Println("Tx Hash: ", tx.Hash())
-
     return tx, isPending
 }
 
@@ -242,20 +236,16 @@ func TransferETH(transferPayload types.TransferETHPayload) (types.TransferData) 
     if transferPayload.GasPrice == nil {
         gasPrice, err = client.SuggestGasPrice(context.Background())
         if err != nil {
-           fmt.Errorf("failed to suggest gas price: %v", err)
+           log.Fatal(err.Error())
         }
-        fmt.Println("Gas Price: ", gasPrice)
     } else {
         gasPrice = transferPayload.GasPrice
-        fmt.Println("Gas Price: ", gasPrice)
     }
 
     if transferPayload.GasLimit == nil {
         gasLimit = uint64(21000)
-        fmt.Println("Gas Limit: ", gasLimit)
     } else {
         gasLimit = *transferPayload.GasLimit
-        fmt.Println("Gas Limit: ", gasLimit)
     }
     
     if transferPayload.Nonce == nil {
@@ -263,15 +253,9 @@ func TransferETH(transferPayload types.TransferETHPayload) (types.TransferData) 
         if err != nil {
             log.Fatal(err.Error())
         }
-        fmt.Println("Nonce: ", nonce)
     } else {
         nonce = *transferPayload.Nonce
-        fmt.Println("Nonce: ", nonce)
     }
-
-    fmt.Println("Gas Price Used: ", gasPrice)
-    fmt.Println("Gas Limit Used: ", gasLimit)
-    fmt.Println("Nonce Used: ", nonce)
 
     tx:= ethTypes.NewTransaction(nonce, recipient, &transferPayload.Amount, gasLimit, gasPrice, nil)
     chainID, err:= client.NetworkID(context.Background())
@@ -289,10 +273,9 @@ func TransferETH(transferPayload types.TransferETHPayload) (types.TransferData) 
         log.Fatal(err)
     }
 
-    fmt.Printf("tx sent: %s", signedTx.Hash().Hex())
     reciept, err:= bind.WaitMined(context.Background(), client, signedTx)
     if err != nil {
-        fmt.Errorf("transaction mining failed: %v", err)
+        log.Fatal(err.Error())
     }
 
     return types.TransferData{
@@ -346,12 +329,10 @@ func TransferToken(transferPayload types.TransferTokenPayload) types.TransferDat
     if transferPayload.GasPrice == nil {
         gasPrice, err = client.SuggestGasPrice(context.Background())
         if err != nil {
-           fmt.Errorf("failed to suggest gas price: %v", err)
+           log.Fatal(err.Error())
         }
-        fmt.Println("Gas Price: ", gasPrice)
     } else {
         gasPrice = transferPayload.GasPrice
-        fmt.Println("Gas Price: ", gasPrice)
     }
 
     if transferPayload.GasLimit == nil {
@@ -359,10 +340,11 @@ func TransferToken(transferPayload types.TransferTokenPayload) types.TransferDat
             To: &recipient,
             Data: data,
         })
-        fmt.Println("Gas Limit: ", gasLimit)
+        if err != nil {
+            log.Fatal(err.Error())
+        }
     } else {
         gasLimit = *transferPayload.GasLimit
-        fmt.Println("Gas Limit: ", gasLimit)
     }
     
     if transferPayload.Nonce == nil {
@@ -370,15 +352,10 @@ func TransferToken(transferPayload types.TransferTokenPayload) types.TransferDat
         if err != nil {
             log.Fatal(err.Error())
         }
-        fmt.Println("Nonce: ", nonce)
     } else {
         nonce = *transferPayload.Nonce
-        fmt.Println("Nonce: ", nonce)
     }
 
-    fmt.Println("Gas Price Used: ", gasPrice)
-    fmt.Println("Gas Limit Used: ", gasLimit)
-    fmt.Println("Nonce Used: ", nonce)
 
     tx:= ethTypes.NewTransaction(nonce, tokenAddress, &transferPayload.Amount, gasLimit, gasPrice, data)
     chainID,err:= client.ChainID(context.Background())
@@ -396,10 +373,9 @@ func TransferToken(transferPayload types.TransferTokenPayload) types.TransferDat
         log.Fatal(err.Error())
     }
     
-    fmt.Printf("tx sent: %s", signedTx.Hash().Hex())
     reciept, err:= bind.WaitMined(context.Background(), client, signedTx)
     if err != nil {
-        fmt.Errorf("transaction mining failed: %v", err)
+        log.Fatal(err.Error())
     }
 
     return types.TransferData{
@@ -422,10 +398,7 @@ func GetTokenInfo(tokenInfoPayload types.TokenInfoPayload) types.TokenInfo {
         fmt.Println(err.Error())
     }
 
-    fmt.Println("Token Address: ", tokenAddress)
-
     contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
-
 
     // Variables to hold token info
     var name, symbol string
@@ -466,9 +439,6 @@ func GetTokenInfo(tokenInfoPayload types.TokenInfoPayload) types.TokenInfo {
     } else if len(resultTotalSupply) > 0 {
         totalSupply = resultTotalSupply[0].(*big.Int)
     }
-
-    // Output the token info
-    fmt.Printf("Name: %s\nSymbol: %s\nDecimals: %d\nTotal Supply: %s\n", name, symbol, decimals, totalSupply.String())
 
     return types.TokenInfo{
         Name: name,
