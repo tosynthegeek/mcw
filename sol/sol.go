@@ -1,7 +1,9 @@
 package sol
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mcw/types"
 
@@ -54,7 +56,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
+	fmt.Println(privateKeyBytes)
 	privateKeyFull := append(solAccount.PrivateKey[:32], solAccount.PublicKey[:]...)
     privateKeyJSON, err := json.Marshal(privateKeyFull)
     if err != nil {
@@ -82,4 +84,23 @@ func CreateWallet(passphrase string) types.Wallet {
     wallet:= WalletFromMnemonic(mnemonic, passphrase)
 
     return wallet
+}
+
+
+func GetAddressFromPrivateKey(privateKey string) types.Address {
+	privateKeyJSON, err := base64.StdEncoding.DecodeString(privateKey)
+	if err != nil {
+		log.Fatalf("Error decoding base64: %v", err)
+	}
+
+	privateKeyBytes := privateKeyJSON[:64]
+	wallet, err := soltypes.AccountFromBytes(privateKeyBytes)
+	if err != nil {
+		log.Fatalf("Error creating Solana account: %v", err)
+	}
+
+	return types.Address{
+		Address:    wallet.PublicKey.ToBase58(),
+		PrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
+	}
 }
