@@ -78,3 +78,12 @@ type TokenInfo struct {
 	TotalSupply		big.Int
 	TokenAddress	string
 }
+
+type SmartContractCallPayload struct {
+	PrivateKey   string
+	RpcUrl       string
+	ContractAddr string
+	Method       string
+	Params       []interface{}
+	ABI          []byte
+}
