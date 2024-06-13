@@ -187,7 +187,7 @@ func GetTokenBalance(balancePayload types.BalancePayload) types.Balance {
     fmt.Println("Token Address: ", tokenAddress)
 
     contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
-
+    
     var balance *big.Int
     result:= []interface{}{&balance}
 	callOpts:= &bind.CallOpts{}
@@ -423,5 +423,70 @@ func TransferToken(transferPayload types.TransferTokenPayload) types.TransferDat
         BlockNumber: reciept.BlockNumber.Uint64(),
     }
 }
+
 // Get Token Info
+func GetTokenInfo(tokenInfoPayload types.TokenInfoPayload) types.TokenInfo {
+    client:= client.EthClient(tokenInfoPayload.RpcUrl)
+    tokenAddress:= common.HexToAddress(tokenInfoPayload.TokenAddress)
+    abiData, err:= JsonToABI(tokenInfoPayload.ABI)    
+    if err != nil {
+        fmt.Println(err.Error())
+    }
+
+    fmt.Println("Token Address: ", tokenAddress)
+
+    contract:= bind.NewBoundContract(tokenAddress, abiData, client, client, client)
+
+
+    // Variables to hold token info
+    var name, symbol string
+    var decimals uint8
+    var totalSupply *big.Int = new(big.Int)
+
+    // Prepare result slices
+    var resultName []interface{}
+    var resultSymbol []interface{}
+    var resultDecimals []interface{}
+    var resultTotalSupply []interface{}
+
+    // Call contract methods
+    err = contract.Call(nil, &resultName, "name")
+    if err != nil {
+        fmt.Println("Failed to fetch token name:", err)
+    } else if len(resultName) > 0 {
+        name = resultName[0].(string)
+    }
+
+    err = contract.Call(nil, &resultSymbol, "symbol")
+    if err != nil {
+        fmt.Println("Failed to fetch token symbol:", err)
+    } else if len(resultSymbol) > 0 {
+        symbol = resultSymbol[0].(string)
+    }
+
+    err = contract.Call(nil, &resultDecimals, "decimals")
+    if err != nil {
+        fmt.Println("Failed to fetch token decimals:", err)
+    } else if len(resultDecimals) > 0 {
+        decimals = resultDecimals[0].(uint8)
+    }
+
+    err = contract.Call(nil, &resultTotalSupply, "totalSupply")
+    if err != nil {
+        fmt.Println("Failed to fetch total supply:", err)
+    } else if len(resultTotalSupply) > 0 {
+        totalSupply = resultTotalSupply[0].(*big.Int)
+    }
+
+    // Output the token info
+    fmt.Printf("Name: %s\nSymbol: %s\nDecimals: %d\nTotal Supply: %s\n", name, symbol, decimals, totalSupply.String())
+
+    return types.TokenInfo{
+        Name: name,
+        Symbol: symbol,
+        Decimals: decimals,
+        TotalSupply: *totalSupply,
+        TokenAddress: tokenInfoPayload.TokenAddress,
+    }
+}
 // SC call

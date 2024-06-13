@@ -11,7 +11,7 @@ import (
 func main() {
 	mnemonic := "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
 	passphrase := "mysecretpassword"
-	privateKey:= "b5b8eda0c8b55a7f9eafd1f15757c65bebe9ecfb929f41a1bef91055c0a6aa9a"
+	privateKey:= ""
 	abiByte, err:= os.ReadFile("./abi/golem.json")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -52,9 +52,17 @@ func main() {
 	}
 
 	hash:= "0xbbfe64b5619fcee225294c18575b49e41b647be7737dbfab47261b70a80de8ca"
-	// fmt.Println("Initiating Tx....")
+	fmt.Println("Initiating Tx....")
 	
-	// eth.TransferETH(tp)
+	eth.TransferETH(tp)
 
 	eth.GetTxByHash(hash, tp.RpcUrl)
+
+	tip:= types.TokenInfoPayload {
+		RpcUrl: "https://cloudflare-eth.com",
+		TokenAddress: "0xa74476443119A942dE498590Fe1f2454d7D4aC0d",
+		ABI: abiByte,
+	}
+
+	eth.GetTokenInfo(tip)
 }

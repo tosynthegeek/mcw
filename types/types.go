@@ -64,3 +64,17 @@ type TransferData struct {
     GasPrice    *big.Int // Gas price used
     BlockNumber uint64
 }
+
+type TokenInfoPayload struct {
+	RpcUrl 			string
+	TokenAddress 	string
+	ABI				[]byte
+}
+
+type TokenInfo struct {
+	Name 			string
+	Symbol			string
+	Decimals		uint8
+	TotalSupply		big.Int
+	TokenAddress	string
+}
