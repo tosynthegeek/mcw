@@ -1,10 +1,12 @@
 package sol
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
+	"mcw/client"
 	"mcw/types"
 
 	soltypes "github.com/blocto/solana-go-sdk/types"
@@ -104,3 +106,31 @@ func GetAddressFromPrivateKey(privateKey string) types.Address {
 		PrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
 	}
 }
+
+// GetSolBalance
+func GetSolBalance(ctx context.Context, address string) uint {
+	client:= client.SolClient()
+
+	balance, err:= client.GetBalance(ctx, address)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return uint(balance)
+}
+
+// GetTokenBalance
+func GetTokenBalance(ctx context.Context, tokenAddress string) {
+	client:= client.SolClient()
+	token, err:= client.GetTokenAccount(ctx, tokenAddress)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Println(token)
+	
+}
+// GetTxByHash
+// TransferSol
+// Transfer token
+// GetTokenInfo
+// SmartContractCalls
