@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	solAddress := "3sZA1qjF4GBr1XnvFTbU5HXkxpYKRdf1LRvmXqvyuZiK"
+	solAddress := "GLHCm5rMasb1kX7M7QL6Q9SVRWPscXsXpw32bmYgT7xo"
 	UsdcTokenAddress:= "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	ctx:= context.TODO()
 	// mnemonic := "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
@@ -70,7 +70,6 @@ func main() {
 	// wallet:= sol.GetAddressFromPrivateKey(privateKey)
 	// fmt.Println("Wallet PrivateKey: ", wallet.PrivateKey)
 	// fmt.Println("Wallet Address: ", wallet.Address) // 46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH
-	balance:= sol.GetSolBalance(ctx, solAddress)
-	fmt.Println(balance)
-	fmt.Println(UsdcTokenAddress)
+	balance:= sol.GetTokenBalance(ctx, solAddress, UsdcTokenAddress)
+	fmt.Println(balance.Amount)
 }

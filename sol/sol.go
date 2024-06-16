@@ -9,6 +9,7 @@ import (
 	"mcw/client"
 	"mcw/types"
 
+	solClient "github.com/blocto/solana-go-sdk/client"
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -120,16 +121,36 @@ func GetSolBalance(ctx context.Context, address string) uint {
 }
 
 // GetTokenBalance
-func GetTokenBalance(ctx context.Context, tokenAddress string) {
+func GetTokenBalance(ctx context.Context, address string, tokenMintAddress string) solClient.TokenAmount {
 	client:= client.SolClient()
-	token, err:= client.GetTokenAccount(ctx, tokenAddress)
+	resp, err:= client.GetTokenAccountsByOwnerByMint(ctx, address, tokenMintAddress)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	fmt.Println(token)
+	fmt.Println(resp)
+
+    if len(resp) == 0 {
+		fmt.Errorf("no token accounts found for address: %s", address)
+	}
+
+    tokenAccount := resp[0].PublicKey
+
+	// Fetch the balance for the token account
+	balanceResp, err := client.GetTokenAccountBalance(ctx, tokenAccount.ToBase58())
+	if err != nil {
+        fmt.Errorf("error fetching token balance: %w", err)
+	}
+
+    fmt.Println(balanceResp.Amount)
+
+	// Convert balance to *big.Int
+	// balance := big.NewInt(0)
+
+    return balanceResp
 	
 }
 // GetTxByHash
+
 // TransferSol
 // Transfer token
 // GetTokenInfo
