@@ -144,7 +144,7 @@ func GetTokenBalance(ctx context.Context, address string, tokenMintAddress strin
     fmt.Println(balanceResp.Amount)
 
 	// Convert balance to *big.Int
-	// balance := big.NewInt(0)
+	balance := big.NewInt(0)
 
     return balanceResp
 	
