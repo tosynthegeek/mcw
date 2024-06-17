@@ -127,7 +127,6 @@ func GetTokenBalance(ctx context.Context, address string, tokenMintAddress strin
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	fmt.Println(resp)
 
     if len(resp) == 0 {
 		fmt.Errorf("no token accounts found for address: %s", address)
@@ -141,14 +140,12 @@ func GetTokenBalance(ctx context.Context, address string, tokenMintAddress strin
         fmt.Errorf("error fetching token balance: %w", err)
 	}
 
-    fmt.Println(balanceResp.Amount)
-
 	// Convert balance to *big.Int
-	balance := big.NewInt(0)
+	// balance := big.NewInt(0)
 
     return balanceResp
-	
 }
+
 // GetTxByHash
 
 // TransferSol
