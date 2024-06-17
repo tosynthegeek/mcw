@@ -140,13 +140,19 @@ func GetTokenBalance(ctx context.Context, address string, tokenMintAddress strin
         fmt.Errorf("error fetching token balance: %w", err)
 	}
 
-	// Convert balance to *big.Int
-	// balance := big.NewInt(0)
-
     return balanceResp
 }
 
 // GetTxByHash
+func GetTxByHash(ctx context.Context, hash string) (*solClient.Transaction) {
+	client:= client.SolClient()
+	tx, err:= client.GetTransaction(ctx, hash)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return tx
+}
 
 // TransferSol
 // Transfer token
