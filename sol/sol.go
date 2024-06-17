@@ -1,11 +1,8 @@
 package sol
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,6 +10,7 @@ import (
 
 	solClient "github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
+	"github.com/blocto/solana-go-sdk/program/sysprog"
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -158,34 +156,27 @@ func GetTxByHash(endpoint string, ctx context.Context, hash string) (*solClient.
 }
 
 // TransferSol
-func TransferSol(transferPayload types.TransferSolPayload) string {
+func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 	client:= solClient.NewClient(transferPayload.RpcUrl)
-	privateKey, err:= hex.DecodeString(transferPayload.PrivateKey)
+	privateKey, err:= base64.StdEncoding.DecodeString(transferPayload.PrivateKey)
 	if err != nil {
-		log.Fatal(err.Error())
+		return "", fmt.Errorf("failed to decode private key: %w", err)
 	}
 
 	sender, err:= soltypes.AccountFromBytes(privateKey)
 	if err != nil {
-		log.Fatal(err.Error())
+		return "", fmt.Errorf("failed to create account from private key: %w", err)
 	}
 
 	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
+	fmt.Println("Recipient: ", recipient)
 	
-	value, err:= client.GetLatestBlockhash(context.Background())
+	value, err:= client.GetLatestBlockhash(context.TODO())
 	if err != nil {
-		log.Fatal(err.Error())
+		return "", fmt.Errorf("failed to get latest blockhash: %w", err)
 	}
 
 	latestBlockHash:= value.Blockhash
-
-	// Encode amount as data
-	var buffer bytes.Buffer
-	err = binary.Write(&buffer, binary.LittleEndian, transferPayload.Amount)
-	if err != nil {
-		fmt.Errorf("failed to write amount to buffer: %w", err)
-	}
-	data := buffer.Bytes()
 
 	tx, err:= soltypes.NewTransaction(soltypes.NewTransactionParam{
 		Signers: []soltypes.Account{sender},
@@ -193,27 +184,25 @@ func TransferSol(transferPayload types.TransferSolPayload) string {
 			FeePayer: sender.PublicKey,
 			RecentBlockhash: latestBlockHash,
 			Instructions: []soltypes.Instruction{
-				{
-					ProgramID: common.SystemProgramID,
-					Accounts: []soltypes.AccountMeta{
-						{PubKey: sender.PublicKey, IsSigner: true, IsWritable: true},
-						{PubKey: recipient, IsSigner: false, IsWritable: true},
-					},
-					Data: append([]byte{2}, data...), // System Program Transfer (2)
-				},
+				sysprog.Transfer(sysprog.TransferParam{
+					From: sender.PublicKey,
+					To: recipient,
+					Amount: transferPayload.Amount,
+				}),
 			},
 		}),
 	})
 	if err != nil {
-		log.Fatal(err.Error())
+		return "", fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	txHash, err := client.SendTransaction(context.Background(), tx)
+	txHash, err := client.SendTransaction(context.TODO(), tx)
 	if err != nil {
-		fmt.Errorf("failed to send transaction: %w", err)
+		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
+	fmt.Println(txHash)
 
-	return txHash
+	return txHash, nil
 }
 // Transfer token
 // GetTokenInfo

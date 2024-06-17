@@ -92,6 +92,6 @@ type TransferSolPayload struct{
 	PrivateKey		string
 	RpcUrl 			string
 	Recipient		string
-	Amount			uint64
+	Amount			uint64 // In Lamports
 	Network			*string
 }
