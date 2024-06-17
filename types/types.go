@@ -87,3 +87,11 @@ type SmartContractCallPayload struct {
 	Params       []interface{}
 	ABI          []byte
 }
+
+type TransferSolPayload struct{
+	PrivateKey		string
+	RpcUrl 			string
+	Recipient		string
+	Amount			uint64
+	Network			*string
+}

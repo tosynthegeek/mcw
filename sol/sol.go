@@ -1,15 +1,18 @@
 package sol
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"mcw/client"
 	"mcw/types"
 
 	solClient "github.com/blocto/solana-go-sdk/client"
+	"github.com/blocto/solana-go-sdk/common"
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -109,8 +112,8 @@ func GetAddressFromPrivateKey(privateKey string) types.Address {
 }
 
 // GetSolBalance
-func GetSolBalance(ctx context.Context, address string) uint {
-	client:= client.SolClient()
+func GetSolBalance(endpoint string, ctx context.Context, address string) uint {
+	client:= solClient.NewClient(endpoint)
 
 	balance, err:= client.GetBalance(ctx, address)
 	if err != nil {
@@ -121,8 +124,8 @@ func GetSolBalance(ctx context.Context, address string) uint {
 }
 
 // GetTokenBalance
-func GetTokenBalance(ctx context.Context, address string, tokenMintAddress string) solClient.TokenAmount {
-	client:= client.SolClient()
+func GetTokenBalance(endpoint string, ctx context.Context, address string, tokenMintAddress string) solClient.TokenAmount {
+	client:= solClient.NewClient(endpoint)
 	resp, err:= client.GetTokenAccountsByOwnerByMint(ctx, address, tokenMintAddress)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -144,8 +147,8 @@ func GetTokenBalance(ctx context.Context, address string, tokenMintAddress strin
 }
 
 // GetTxByHash
-func GetTxByHash(ctx context.Context, hash string) (*solClient.Transaction) {
-	client:= client.SolClient()
+func GetTxByHash(endpoint string, ctx context.Context, hash string) (*solClient.Transaction) {
+	client:= solClient.NewClient(endpoint)
 	tx, err:= client.GetTransaction(ctx, hash)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -155,6 +158,63 @@ func GetTxByHash(ctx context.Context, hash string) (*solClient.Transaction) {
 }
 
 // TransferSol
+func TransferSol(transferPayload types.TransferSolPayload) string {
+	client:= solClient.NewClient(transferPayload.RpcUrl)
+	privateKey, err:= hex.DecodeString(transferPayload.PrivateKey)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	sender, err:= soltypes.AccountFromBytes(privateKey)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
+	
+	value, err:= client.GetLatestBlockhash(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	latestBlockHash:= value.Blockhash
+
+	// Encode amount as data
+	var buffer bytes.Buffer
+	err = binary.Write(&buffer, binary.LittleEndian, transferPayload.Amount)
+	if err != nil {
+		fmt.Errorf("failed to write amount to buffer: %w", err)
+	}
+	data := buffer.Bytes()
+
+	tx, err:= soltypes.NewTransaction(soltypes.NewTransactionParam{
+		Signers: []soltypes.Account{sender},
+		Message: soltypes.NewMessage(soltypes.NewMessageParam{
+			FeePayer: sender.PublicKey,
+			RecentBlockhash: latestBlockHash,
+			Instructions: []soltypes.Instruction{
+				{
+					ProgramID: common.SystemProgramID,
+					Accounts: []soltypes.AccountMeta{
+						{PubKey: sender.PublicKey, IsSigner: true, IsWritable: true},
+						{PubKey: recipient, IsSigner: false, IsWritable: true},
+					},
+					Data: append([]byte{2}, data...), // System Program Transfer (2)
+				},
+			},
+		}),
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	txHash, err := client.SendTransaction(context.Background(), tx)
+	if err != nil {
+		fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return txHash
+}
 // Transfer token
 // GetTokenInfo
 // SmartContractCalls
