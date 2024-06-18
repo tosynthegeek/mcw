@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
+	"mcw/eth"
 	"mcw/sol"
+	"mcw/types"
+	"os"
 
+	solClient "github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/blocto/solana-go-sdk/rpc"
 )
@@ -75,9 +80,12 @@ func main() {
 	eth.GetTokenInfo(tip)
 
 	wallet:= sol.GetAddressFromPrivateKey(privateKey)
-	fmt.Println("Wallet PrivateKey: ", wallet.PrivateKey) 46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH
+	fmt.Println("Wallet PrivateKey: ", wallet.PrivateKey) // 46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH
 	fmt.Println("Wallet Address: ", wallet.Address) // 46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH
-	UsdcBalance:= sol.GetTokenBalance(ctx, solAddress, UsdcTokenAddress)
+	UsdcBalance, err:= sol.GetTokenBalance(mainnet, ctx, solAddress, UsdcTokenAddress)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	fmt.Println(UsdcBalance)
 	mcwAddress:= "5oxMcA1ffNmnZWYiqDxPDCxCmpgcNjAxo5tpnuZmCo3M"
 	myAddress:= "46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH"
@@ -90,15 +98,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	fmt.Println(str)
 
-	tp:= types.TransferSolPayload{
+	tsp:= types.TransferSolPayload{
 		PrivateKey: privateKey,
 		RpcUrl: devnet,
 		Recipient: mcwAddress,
 		Amount: uint64(1000000000),
 	}
 
-	response, err:= sol.TransferSol(tp)
+	response, err:= sol.TransferSol(tsp)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
