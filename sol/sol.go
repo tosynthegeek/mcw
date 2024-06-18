@@ -10,7 +10,8 @@ import (
 
 	solClient "github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
-	"github.com/blocto/solana-go-sdk/program/sysprog"
+	"github.com/blocto/solana-go-sdk/program/system"
+	"github.com/blocto/solana-go-sdk/program/token"
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -171,7 +172,7 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
 	fmt.Println("Recipient: ", recipient)
 	
-	value, err:= client.GetLatestBlockhash(context.TODO())
+	value, err:= client.GetLatestBlockhash(transferPayload.Context)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest blockhash: %w", err)
 	}
@@ -184,7 +185,7 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 			FeePayer: sender.PublicKey,
 			RecentBlockhash: latestBlockHash,
 			Instructions: []soltypes.Instruction{
-				sysprog.Transfer(sysprog.TransferParam{
+				system.Transfer(system.TransferParam{
 					From: sender.PublicKey,
 					To: recipient,
 					Amount: transferPayload.Amount,
@@ -196,7 +197,7 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 		return "", fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	txHash, err := client.SendTransaction(context.TODO(), tx)
+	txHash, err := client.SendTransaction(transferPayload.Context, tx)
 	if err != nil {
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
@@ -206,8 +207,67 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 }
 
 // Transfer 
-func transferToken() {
+func TransferToken(transferPayload types.TransferSolTokenPayload) (string, error) {
+	client:= solClient.NewClient(transferPayload.RpcUrl)
+	privateKey, err:= base64.StdEncoding.DecodeString(transferPayload.PrivateKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode private key: %w", err)
+	}
+
+	sender, err:= soltypes.AccountFromBytes(privateKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to create account from private key: %w", err)
+	}
+
+	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
+	mintPubkey := common.PublicKeyFromString(transferPayload.Mint)
+
+	// Get token accounts
+    fromTokenAccount, _, err := common.FindAssociatedTokenAddress(sender.PublicKey, mintPubkey)
+    if err != nil {
+        return "", fmt.Errorf("failed to find sender's associated token address: %w", err)
+    }
+
+    toTokenAccount, _, err := common.FindAssociatedTokenAddress(recipient, mintPubkey)
+    if err != nil {
+        return "", fmt.Errorf("failed to find recipient's associated token address: %w", err)
+    }
 	
+	value, err:= client.GetLatestBlockhash(transferPayload.Context)
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest blockhash: %w", err)
+	}
+
+	latestBlockHash:= value.Blockhash
+
+	tx, err:= soltypes.NewTransaction(soltypes.NewTransactionParam{
+		Signers: []soltypes.Account{sender},
+		Message: soltypes.NewMessage(soltypes.NewMessageParam{
+			FeePayer: sender.PublicKey,
+			RecentBlockhash: latestBlockHash,
+			Instructions: []soltypes.Instruction{
+				token.Transfer(token.TransferParam{
+					From: fromTokenAccount,
+					To: toTokenAccount,
+					Auth: sender.PublicKey,
+					Amount: transferPayload.Amount,
+					Signers: []common.PublicKey{sender.PublicKey},
+				}),
+			},
+		}),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	txHash, err := client.SendTransaction(transferPayload.Context, tx)
+	if err != nil {
+		return "", fmt.Errorf("failed to send transaction: %w", err)
+	}
+	fmt.Println(txHash)
+
+	return txHash, nil
+
 }
 
 // GetTokenInfo

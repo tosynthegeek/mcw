@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"math/big"
 )
 
@@ -89,9 +90,20 @@ type SmartContractCallPayload struct {
 }
 
 type TransferSolPayload struct{
+	Context			context.Context				
 	PrivateKey		string
 	RpcUrl 			string
 	Recipient		string
+	Amount			uint64 // In Lamports 
+	Network			*string
+}
+
+type TransferSolTokenPayload struct{
+	Context			context.Context	
+	PrivateKey		string
+	RpcUrl 			string
+	Recipient		string
+	Mint			string
 	Amount			uint64 // In Lamports 
 	Network			*string
 }
