@@ -123,7 +123,6 @@ type SolTokenInfo struct {
 	Supply          	uint64
 	Mint				common.PublicKey
 	Decimals        	uint8
-	Amount				uint64
 	Owner           	common.PublicKey
 	MintAuthority   	common.PublicKey
 	FreezeAuthority 	common.PublicKey

@@ -270,47 +270,48 @@ func TransferToken(transferPayload types.TransferSolTokenPayload) (string, error
 
 }
 
-// GetTokenInfo
+// GetTokenInfo not working yet 
 func GetTokenInfo(endpoint string, ctx context.Context, tokenAddress string) (types.SolTokenInfo, error){
 	client:= solClient.NewClient(endpoint)
 
-	accountInfo, err:= client.GetAccountInfo(ctx, tokenAddress)
+	mintAccountInfo, err:= client.GetAccountInfo(ctx, tokenAddress)
 	if err != nil {
 		return types.SolTokenInfo{}, fmt.Errorf("failed to get account info: %w", err)
 	}
 
 	// Check if the account is owned by the Token Program
     tokenProgramID := common.TokenProgramID
-    if accountInfo.Owner != tokenProgramID {
-        return types.SolTokenInfo{}, fmt.Errorf("account is not owned by the Token Program (owner: %s)", accountInfo.Owner)
+    if mintAccountInfo.Owner != tokenProgramID {
+        return types.SolTokenInfo{}, fmt.Errorf("account is not owned by the Token Program (owner: %s)", mintAccountInfo.Owner)
     }
 
     // Log the size of the account data for debugging
-    log.Printf("Account data size: %d bytes", len(accountInfo.Data))
+    log.Printf("Account data size: %d bytes", len(mintAccountInfo.Data))
 
-	if len(accountInfo.Data) != 165 {
-		return types.SolTokenInfo{}, fmt.Errorf("invalid account data size: expected 165 bytes, got %d", len(accountInfo.Data))
-	}
+	// if len(mintAccountInfo.Data) != 165 {
+	// 	return types.SolTokenInfo{}, fmt.Errorf("invalid account data size: expected 165 bytes, got %d", len(mintAccountInfo.Data))
+	// }
 
-	tokenAccount, err:= token.TokenAccountFromData(accountInfo.Data)
+	mintAccount, err:= token.MintAccountFromData(mintAccountInfo.Data)
 	if err != nil {
 		return types.SolTokenInfo{}, fmt.Errorf("failed to parse token account data: %w", err)
 	}
 
-	mint:= tokenAccount.Mint
-	mintAddress:= mint.ToBase58()
-	mintAccountInfo, err := client.GetAccountInfo(ctx, mintAddress)
-    if err != nil {
-        return types.SolTokenInfo{}, fmt.Errorf("failed to get mint account info: %w", err)
-    }
 
-    // Parse mint account data
-    mintInfo, err := token.MintAccountFromData(mintAccountInfo.Data)
-    if err != nil {
-        return types.SolTokenInfo{}, fmt.Errorf("failed to parse mint account data: %w", err)
+	mint:= common.PublicKeyFromString(tokenAddress)
+	// // mintAddress:= mint.ToBase58()
+	// mintAccountInfo, err := client.GetAccountInfo(ctx, tokenAddress)
+    // if err != nil {
+    //     return types.SolTokenInfo{}, fmt.Errorf("failed to get mint account info: %w", err)
+    // }
 
-    }
-	metadata, err:= getTokenMetadata(endpoint, ctx, mint)
+    // // Parse mint account data
+    // mintInfo, err := token.MintAccountFromData(mintAccountInfo.Data)
+    // if err != nil {
+    //     return types.SolTokenInfo{}, fmt.Errorf("failed to parse mint account data: %w", err)
+
+    // }
+	metadata, err:= GetTokenMetadata(endpoint, ctx, mint)
 	if err != nil {
 		return types.SolTokenInfo{}, fmt.Errorf("failed to get token metadata: %w", err)
 	}
@@ -319,19 +320,18 @@ func GetTokenInfo(endpoint string, ctx context.Context, tokenAddress string) (ty
 		Name: metadata.Name,
 		Symbol: metadata.Symbol,
 		URL: metadata.URL,
-		Supply: mintInfo.Supply,
+		Supply: mintAccount.Supply,
 		Mint: mint,
-		Decimals:  mintInfo.Decimals,
-		Amount: tokenAccount.Amount,
+		Decimals:  mintAccount.Decimals,
 		Owner: mintAccountInfo.Owner,
-		MintAuthority: *mintInfo.MintAuthority,
-		FreezeAuthority: *mintInfo.FreezeAuthority,
-		IsInitialize: mintInfo.IsInitialized,
+		MintAuthority: *mintAccount.MintAuthority,
+		FreezeAuthority: *mintAccount.FreezeAuthority,
+		IsInitialize: mintAccount.IsInitialized,
 		AssociatedAccount: tokenAddress,
 	}, nil
 }
 
-func getTokenMetadata(endpoint string, ctx context.Context, mintAddress common.PublicKey) (types.TokenMetaData, error) {
+func GetTokenMetadata(endpoint string, ctx context.Context, mintAddress common.PublicKey) (types.TokenMetaData, error) {
 	client:= solClient.NewClient(endpoint)
     metadataProgram := common.PublicKeyFromString("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s") // Metaplex Token Metadata Program
     metadataAddress, _, err := common.FindProgramAddress(
@@ -351,6 +351,7 @@ func getTokenMetadata(endpoint string, ctx context.Context, mintAddress common.P
         return types.TokenMetaData{}, fmt.Errorf("failed to get metadata account info: %w", err)
     }
 
+	fmt.Println(accountInfo.Data)
     // This is a simplified parsing. You'll need to implement proper
     // deserialization based on the Token Metadata Program's data structure
     var metadata types.TokenMetaData
