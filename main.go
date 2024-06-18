@@ -1,24 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"mcw/sol"
-	"mcw/types"
 
 	"github.com/blocto/solana-go-sdk/rpc"
 )
 
 func main() {
-	// mainnet:= rpc.MainnetRPCEndpoint
-	devnet := rpc.DevnetRPCEndpoint
+	mainnet:= rpc.MainnetRPCEndpoint
+	// devnet := rpc.DevnetRPCEndpoint
 	// solAddress := "GLHCm5rMasb1kX7M7QL6Q9SVRWPscXsXpw32bmYgT7xo"
-	// UsdcTokenAddress:= "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+	UsdcTokenAddress:= "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	// txhash:= "5CiSEgPuf7WWJHr3CG3uK2qqQdGQ89AZyohHptDy1dfjEEAXmW1ebN2ANPxjKqEggZZK4g15RsWkaUwjsYJouX7U"
-	// ctx:= context.TODO()
+	ctx:= context.TODO()
 	// mnemonic := "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
 	// passphrase := "mysecretpassword"
-	privateKey := "vymDCylbqtCDlCCyjTe5dU0lmW63XHyl+gf/EpaA63IuC1MJxiBpylRZnMpC/m1ibRxE95HK3lHIpo6cI8wuhA=="
+	// privateKey := "vymDCylbqtCDlCCyjTe5dU0lmW63XHyl+gf/EpaA63IuC1MJxiBpylRZnMpC/m1ibRxE95HK3lHIpo6cI8wuhA=="
 	// abiByte, err:= os.ReadFile("./abi/golem.json")
 	// if err != nil {
 	// 	log.Fatal(err.Error())
@@ -78,7 +78,7 @@ func main() {
 	// fmt.Println("Wallet Address: ", wallet.Address) // 46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH
 	// UsdcBalance:= sol.GetTokenBalance(ctx, solAddress, UsdcTokenAddress)
 	// fmt.Println(UsdcBalance)
-	mcwAddress:= "5oxMcA1ffNmnZWYiqDxPDCxCmpgcNjAxo5tpnuZmCo3M"
+	// mcwAddress:= "5oxMcA1ffNmnZWYiqDxPDCxCmpgcNjAxo5tpnuZmCo3M"
 	// myAddress:= "46jmdM8JBsweANkCJZSgQzdUUmwH2TEBcjQQkwhWBjFH"
 
 	// tx:= sol.GetTxByHash(mainnet, ctx, txhash)
@@ -90,16 +90,22 @@ func main() {
 	// 	log.Fatal(err.Error())
 	// }
 
-	tp:= types.TransferSolPayload{
-		PrivateKey: privateKey,
-		RpcUrl: devnet,
-		Recipient: mcwAddress,
-		Amount: uint64(1000000000),
-	}
+	// tp:= types.TransferSolPayload{
+	// 	PrivateKey: privateKey,
+	// 	RpcUrl: devnet,
+	// 	Recipient: mcwAddress,
+	// 	Amount: uint64(1000000000),
+	// }
 
-	response, err:= sol.TransferSol(tp)
+	// response, err:= sol.TransferSol(tp)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// fmt.Println(response)
+
+	usdc, err:= sol.GetTokenInfo(mainnet, ctx, UsdcTokenAddress)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	fmt.Println(response)
+	fmt.Println(usdc)
 }

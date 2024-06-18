@@ -3,6 +3,8 @@ package types
 import (
 	"context"
 	"math/big"
+
+	"github.com/blocto/solana-go-sdk/common"
 )
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -106,4 +108,25 @@ type TransferSolTokenPayload struct{
 	Mint			string
 	Amount			uint64 // In Lamports 
 	Network			*string
+}
+
+type TokenMetaData struct {
+	Name 		string
+	Symbol		string
+	URL			string
+}
+
+type SolTokenInfo struct {
+	Name            	string
+	Symbol          	string
+	URL             	string
+	Supply          	uint64
+	Mint				common.PublicKey
+	Decimals        	uint8
+	Amount				uint64
+	Owner           	common.PublicKey
+	MintAuthority   	common.PublicKey
+	FreezeAuthority 	common.PublicKey
+	IsInitialize	   	bool
+	AssociatedAccount 	string
 }
