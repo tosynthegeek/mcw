@@ -123,7 +123,7 @@ func GetSolBalance(endpoint string, ctx context.Context, address string) uint {
 }
 
 // GetTokenBalance
-func GetTokenBalance(endpoint string, ctx context.Context, address string, tokenMintAddress string) solClient.TokenAmount {
+func GetTokenBalance(endpoint string, ctx context.Context, address string, tokenMintAddress string) (solClient.TokenAmount, error) {
 	client:= solClient.NewClient(endpoint)
 	resp, err:= client.GetTokenAccountsByOwnerByMint(ctx, address, tokenMintAddress)
 	if err != nil {
@@ -131,7 +131,7 @@ func GetTokenBalance(endpoint string, ctx context.Context, address string, token
 	}
 
     if len(resp) == 0 {
-		fmt.Errorf("no token accounts found for address: %s", address)
+		return solClient.TokenAmount{}, fmt.Errorf("no token accounts found for address: %s", address)
 	}
 
     tokenAccount := resp[0].PublicKey
@@ -139,10 +139,10 @@ func GetTokenBalance(endpoint string, ctx context.Context, address string, token
 	// Fetch the balance for the token account
 	balanceResp, err := client.GetTokenAccountBalance(ctx, tokenAccount.ToBase58())
 	if err != nil {
-        fmt.Errorf("error fetching token balance: %w", err)
+        return solClient.TokenAmount{}, fmt.Errorf("error fetching token balance: %w", err)
 	}
 
-    return balanceResp
+    return balanceResp, nil
 }
 
 // GetTxByHash
