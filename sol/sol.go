@@ -204,6 +204,11 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 
 	return txHash, nil
 }
-// Transfer token
+
+// Transfer 
+func transferToken() {
+	
+}
+
 // GetTokenInfo
 // SmartContractCalls
