@@ -91,21 +91,26 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 }
 
 // GetAddressFromPrivateKey retrieves the Bitcoin address from a WIF private key.
-func GetAddressFromPrivateKey(privateKey string) types.Address {
-	wif, err := btcutil.DecodeWIF(privateKey)
+func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
+	wif, err:= btcutil.DecodeWIF(privateKey)
 	if err != nil {
-		log.Fatalf("Error decoding WIF: %v", err)
+		return types.Address{}, fmt.Errorf("error decoding string: %v", err)
 	}
 
-	address, err := btcutil.NewAddressPubKey(wif.PrivKey.PubKey().SerializeCompressed(), &chaincfg.MainNetParams)
+	secpPrivKey:= wif.PrivKey
+	pubKey := secpPrivKey.PubKey()
+
+	// Generate SegWit (Bech32) address
+	witnessProgram, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(pubKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
-		log.Fatalf("Error creating address: %v", err)
+		return types.Address{}, fmt.Errorf("failed to create Bech32 address: %v", err)
 	}
+	address:= witnessProgram.EncodeAddress()
 
 	return types.Address{
-		Address:    address.EncodeAddress(),
-		PrivateKey: privateKey,
-	}
+		Address:    address,
+		PrivateKey: wif.String(),
+	}, nil
 }
 
 // GetBalance retrieves the Bitcoin balance for a given address.
