@@ -127,7 +127,10 @@ func main() {
 
 	fmt.Println(meta)
 
-	btcwallet:= btc.WalletFromMnemonic(mnemonic, passphrase)
-	fmt.Println(btcwallet)
+	btcwallet, err:= btc.WalletFromMnemonic(mnemonic, passphrase)
+	if err != nil {
+		fmt.Errorf("Error generating wallet: %v", err)
+	}
+	fmt.Println(btcwallet) // bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu
 
 }

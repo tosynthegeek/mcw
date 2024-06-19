@@ -1,23 +1,24 @@
 package btc
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"mcw/types"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 )
 
 // WalletFromMnemonic creates a Bitcoin wallet from a mnemonic and passphrase.
-func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
+func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 	if !bip39.IsMnemonicValid(mnemonic) {
 		log.Fatal("Mnemonic is not valid")
 	}
@@ -25,55 +26,58 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
 	seed := bip39.NewSeed(mnemonic, passphrase)
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to create master key: %v", err)
 	}
 
-	// Derivation path: m/44'/0'/0'/0/0
-	purpose, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
+	// Derivation path: m/84'/0'/0'/0/0 (for SegWit addresses)
+	purpose, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 84)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to derive purpose key: %v", err)
 	}
 	coinType, err := purpose.NewChildKey(bip32.FirstHardenedChild + 0)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to derive coin type key: %v", err)
 	}
 	account, err := coinType.NewChildKey(bip32.FirstHardenedChild + 0)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to derive account key: %v", err)
 	}
 	change, err := account.NewChildKey(0)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to derive change key: %v", err)
 	}
 	child, err := change.NewChildKey(0)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to derive child key: %v", err)
 	}
 
-	privateKey, publicKey := child.Key, child.PublicKey()
+	privateKey := child.Key
 
-	secpPrivKey:= secp256k1.PrivKeyFromBytes(privateKey)
+	secpPrivKey, _ := btcec.PrivKeyFromBytes( privateKey)
+	pubKey := secpPrivKey.PubKey()
 
 	wif, err := btcutil.NewWIF(secpPrivKey, &chaincfg.MainNetParams, true)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to create WIF: %v", err)
 	}
 
-	address, err := btcutil.NewAddressPubKey(wif.PrivKey.PubKey().SerializeCompressed(), &chaincfg.MainNetParams)
+	// Generate SegWit (Bech32) address
+	witnessProgram, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(pubKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("failed to create Bech32 address: %v", err)
 	}
+	address:= witnessProgram.EncodeAddress()
 
 	return types.Wallet{
 		Mnemonic:   mnemonic,
 		PrivateKey: wif.String(),
-		PublicKey:  publicKey.String(),
-		Address:    address.EncodeAddress(),
-	}
+		PublicKey:  hex.EncodeToString(pubKey.SerializeCompressed()),
+		Address:    address,
+	}, nil
 }
 
 // CreateWallet generates a new wallet.
-func CreateWallet(passphrase string) types.Wallet {
+func CreateWallet(passphrase string) (types.Wallet, error) {
 	entropy, err := bip39.NewEntropy(128) // 12 words
 	if err != nil {
 		log.Fatal(err.Error())
