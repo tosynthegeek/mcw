@@ -8,6 +8,7 @@ import (
 	"mcw/types"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -27,29 +28,29 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 	seed := bip39.NewSeed(mnemonic, passphrase)
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to create master key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to create master key: %w", err)
 	}
 
 	// Derivation path: m/84'/0'/0'/0/0 (for SegWit addresses)
 	purpose, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 84)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to derive purpose key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to derive purpose key: %w", err)
 	}
 	coinType, err := purpose.NewChildKey(bip32.FirstHardenedChild + 0)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to derive coin type key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to derive coin type key: %w", err)
 	}
 	account, err := coinType.NewChildKey(bip32.FirstHardenedChild + 0)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to derive account key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to derive account key: %w", err)
 	}
 	change, err := account.NewChildKey(0)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to derive change key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to derive change key: %w", err)
 	}
 	child, err := change.NewChildKey(0)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to derive child key: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to derive child key: %w", err)
 	}
 
 	privateKey := child.Key
@@ -59,13 +60,13 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 
 	wif, err := btcutil.NewWIF(secpPrivKey, &chaincfg.MainNetParams, true)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to create WIF: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to create WIF: %w", err)
 	}
 
 	// Generate SegWit (Bech32) address
 	witnessProgram, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(pubKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
-		return types.Wallet{}, fmt.Errorf("failed to create Bech32 address: %v", err)
+		return types.Wallet{}, fmt.Errorf("failed to create Bech32 address: %w", err)
 	}
 	address:= witnessProgram.EncodeAddress()
 
@@ -95,7 +96,7 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 	wif, err:= btcutil.DecodeWIF(privateKey)
 	if err != nil {
-		return types.Address{}, fmt.Errorf("error decoding string: %v", err)
+		return types.Address{}, fmt.Errorf("error decoding string: %w", err)
 	}
 
 	secpPrivKey:= wif.PrivKey
@@ -104,7 +105,7 @@ func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 	// Generate SegWit (Bech32) address
 	witnessProgram, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(pubKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
-		return types.Address{}, fmt.Errorf("failed to create Bech32 address: %v", err)
+		return types.Address{}, fmt.Errorf("failed to create Bech32 address: %w", err)
 	}
 	address:= witnessProgram.EncodeAddress()
 
@@ -119,12 +120,12 @@ func GetBalance(btcPBalancePayload types.BTCBalancePayload) (types.BTCBalance, e
 	address:= btcPBalancePayload.Address
 	client, err:= client.BtcClient(btcPBalancePayload.Config, )
 	if err != nil {
-		return types.BTCBalance{}, fmt.Errorf("error connecting to client: %v", err)
+		return types.BTCBalance{}, fmt.Errorf("error connecting to client: %w", err)
 	}
 	defer client.Shutdown()
 	unspent, err := client.ListUnspent()
 	if err != nil {
-		return types.BTCBalance{}, fmt.Errorf("error returning all unspent transactions: %v", err)
+		return types.BTCBalance{}, fmt.Errorf("error returning all unspent transactions: %w", err)
 	}
 
 	var utxo btcutil.Amount
@@ -137,13 +138,13 @@ func GetBalance(btcPBalancePayload types.BTCBalancePayload) (types.BTCBalance, e
 	// Parse the address
     addr, err := btcutil.DecodeAddress(address, getChainParams(btcPBalancePayload.Config.Network))
     if err != nil {
-        return types.BTCBalance{}, fmt.Errorf("invalid address: %v", err)
+        return types.BTCBalance{}, fmt.Errorf("invalid address: %w", err)
     }
 
     // Get the balance for the specific address
     balance, err := client.GetReceivedByAddress(addr)
     if err != nil {
-        return types.BTCBalance{}, fmt.Errorf("error getting balance: %v", err)
+        return types.BTCBalance{}, fmt.Errorf("error getting balance: %w", err)
     }
 
 	return types.BTCBalance{
@@ -252,4 +253,23 @@ func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey strin
 	}
 
 	return txHash.String(), nil
+}
+
+func GetTxByHash(config types.BtcClientConfig, hash string) (*btcjson.GetTransactionResult, error) {
+	client, err:= client.BtcClient(config)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to client: %w", err)
+	}
+	defer client.Shutdown()
+
+	chainHash, err:= chainhash.NewHashFromStr(hash)
+	if err != nil {
+		return nil, fmt.Errorf("error creating hash from string: %w", err)
+	}
+	tx, err:= client.GetTransaction(chainHash)
+	if err != nil {
+		return nil, fmt.Errorf("error getting transaction: %w", err)
+	}
+	
+	return tx, nil
 }

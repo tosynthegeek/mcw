@@ -129,7 +129,8 @@ func main() {
 
 	btcwallet, err := btc.WalletFromMnemonic(mnemonic, passphrase)
 	if err != nil {
-		fmt.Errorf("Error generating wallet: %v", err)
+		
+		log.Fatal(err.Error())
 	}
 	fmt.Println(btcwallet) // bc1qdhwtj0j9pxfckduaey0w5d5mhvuv4f7y059s5v
 	btcPrivKey := "KxiNrPvQ33PNtMuAywpE2mbZNLR3CzWQaKZGeuzKfQhFwZ2E92vb"
