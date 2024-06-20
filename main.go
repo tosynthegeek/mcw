@@ -1,11 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"mcw/btc"
-)
-
 func main() {
 	// mainnet:= rpc.MainnetRPCEndpoint
 	// devnet := rpc.DevnetRPCEndpoint
@@ -14,7 +8,7 @@ func main() {
 	// txhash:= "5CiSEgPuf7WWJHr3CG3uK2qqQdGQ89AZyohHptDy1dfjEEAXmW1ebN2ANPxjKqEggZZK4g15RsWkaUwjsYJouX7U"
 	// ctx:= context.TODO()
 	// mnemonic := "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-	passphrase := "mysecretpassword"
+	// passphrase := "mysecretpassword"
 	// privateKey := "vymDCylbqtCDlCCyjTe5dU0lmW63XHyl+gf/EpaA63IuC1MJxiBpylRZnMpC/m1ibRxE95HK3lHIpo6cI8wuhA=="
 	// abiByte, err:= os.ReadFile("./abi/golem.json")
 	// if err != nil {
@@ -123,14 +117,17 @@ func main() {
 	// }
 	// fmt.Println(btcwallet) // bc1qdhwtj0j9pxfckduaey0w5d5mhvuv4f7y059s5v
 	// btcPrivKey:= "KxiNrPvQ33PNtMuAywpE2mbZNLR3CzWQaKZGeuzKfQhFwZ2E92vb"
-	wallet, err:=btc.CreateWallet(passphrase)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Println(wallet)
-	address, err:= btc.GetAddressFromPrivateKey(wallet.PrivateKey)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Println(address)
+	btcAddress := "bc1qqv48lhfhqjz8au3grvnc6nxjcmhzsuucj80frr"
+	// wallet, err:=btc.CreateWallet(passphrase)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// fmt.Println(wallet)
+	// address, err:= btc.GetAddressFromPrivateKey(wallet.PrivateKey)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// fmt.Println(address)
+
+	// btcBalance:= btc.GetBalance(btcAddress)
 }

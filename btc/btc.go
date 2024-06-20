@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"mcw/client"
 	"mcw/types"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -114,20 +115,55 @@ func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 }
 
 // GetBalance retrieves the Bitcoin balance for a given address.
-func GetBalance(client *rpcclient.Client, address string) (btcutil.Amount, error) {
+func GetBalance(btcPBalancePayload types.BTCBalancePayload) (types.BTCBalance, error) {
+	address:= btcPBalancePayload.Address
+	client, err:= client.BtcClient(btcPBalancePayload.Config, )
+	if err != nil {
+		return types.BTCBalance{}, fmt.Errorf("error connecting to client: %v", err)
+	}
+	defer client.Shutdown()
 	unspent, err := client.ListUnspent()
 	if err != nil {
-		return 0, err
+		return types.BTCBalance{}, fmt.Errorf("error returning all unspent transactions: %v", err)
 	}
 
-	var balance btcutil.Amount
+	var utxo btcutil.Amount
 	for _, u := range unspent {
 		if u.Address == address {
-			balance += btcutil.Amount(u.Amount * 1e8)
+			utxo += btcutil.Amount(u.Amount * 1e8)
 		}
 	}
 
-	return balance, nil
+	// Parse the address
+    addr, err := btcutil.DecodeAddress(address, getChainParams(btcPBalancePayload.Config.Network))
+    if err != nil {
+        return types.BTCBalance{}, fmt.Errorf("invalid address: %v", err)
+    }
+
+    // Get the balance for the specific address
+    balance, err := client.GetReceivedByAddress(addr)
+    if err != nil {
+        return types.BTCBalance{}, fmt.Errorf("error getting balance: %v", err)
+    }
+
+	return types.BTCBalance{
+		UTXO: utxo,
+		Address: address,
+		Balance: balance,
+	}, nil
+}
+
+func getChainParams(network string) *chaincfg.Params {
+    switch network {
+    case "testnet":
+        return &chaincfg.TestNet3Params
+    case "regtest":
+        return &chaincfg.RegressionNetParams
+    case "signet":
+        return &chaincfg.SigNetParams
+    default:
+        return &chaincfg.MainNetParams
+    }
 }
 
 // Transfer performs a Bitcoin transfer from one address to another.

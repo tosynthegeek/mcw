@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/blocto/solana-go-sdk/common"
+	"github.com/btcsuite/btcd/btcutil"
 )
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -24,6 +25,12 @@ type Balance struct {
 	Address 		string
 	Balance			big.Int
 	TokenAddress 	*string
+}
+
+type BTCBalance struct {
+	Address 		string
+	UTXO			btcutil.Amount
+	Balance			btcutil.Amount
 }
 
 
@@ -128,4 +135,22 @@ type SolTokenInfo struct {
 	FreezeAuthority 	common.PublicKey
 	IsInitialize	   	bool
 	AssociatedAccount 	string
+}
+
+type BtcClientConfig struct {
+	Host			string
+	User       		string
+	Pass       		string
+	Network    		string // "mainnet", "testnet", "regtest", or "signet"
+	UseTLS     		bool
+	CertPath   		string // Path to TLS certificate, if UseTLS is true
+	Proxy      		string
+	ProxyUser  		string
+	ProxyPass  		string
+	ExtraHeaders 	map[string]string
+}
+
+type BTCBalancePayload struct {
+	Config		BtcClientConfig
+	Address		string
 }
