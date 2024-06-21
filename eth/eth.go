@@ -139,6 +139,7 @@ func GetAddressFromPrivKateKey(privateKey string) types.Address {
         PrivateKey: privateKey,
     }
 }
+// decimal
 
 // GetEthBalance checks for the ETH balance of an address
 // It returns a Balance struct containing the address,  balance (in wei) and the network

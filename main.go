@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"mcw/btc"
 	"mcw/eth"
+	"mcw/flow"
 	"mcw/sol"
 	"mcw/types"
 	"os"
@@ -129,7 +130,7 @@ func main() {
 
 	btcwallet, err := btc.WalletFromMnemonic(mnemonic, passphrase)
 	if err != nil {
-		
+
 		log.Fatal(err.Error())
 	}
 	fmt.Println(btcwallet) // bc1qdhwtj0j9pxfckduaey0w5d5mhvuv4f7y059s5v
@@ -145,4 +146,13 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Println(address)
+	flowHash := "c1f7241ff631929963e2a8370ba79f8232e6d6e2e21ad0b24177ffa0ad4afa99"
+	host := "access.mainnet.nodes.onflow.org:9000"
+
+	flowtx, err:= flow.GetTxByHash(flowHash, host)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Println(flowtx)
 }

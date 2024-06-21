@@ -6,6 +6,8 @@ import (
 
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/btcsuite/btcd/btcutil"
+	Flow "github.com/onflow/flow-go-sdk"
+	flowcrypto "github.com/onflow/flow-go-sdk/crypto"
 )
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -138,11 +140,11 @@ type SolTokenInfo struct {
 }
 
 type BtcClientConfig struct {
-	Host			string
-	User       		string
-	Pass       		string
+	Host			string // Host is the IP address and port of the RPC server you want to connect to
+	User       		string // User is the username to use to authenticate to the RPC server.
+	Pass       		string // Pass is the passphrase to use to authenticate to the RPC server.
 	Network    		string // "mainnet", "testnet", "regtest", or "signet"
-	UseTLS     		bool
+	UseTLS     		bool   // Whether to use the transport layer security
 	CertPath   		string // Path to TLS certificate, if UseTLS is true
 	Proxy      		string
 	ProxyUser  		string
@@ -153,4 +155,23 @@ type BtcClientConfig struct {
 type BTCBalancePayload struct {
 	Config		BtcClientConfig
 	Address		string
+}
+
+type FlowWallet struct {
+    Mnemonic        string
+    PrivateKey      flowcrypto.PrivateKey
+    PublicKey       flowcrypto.PublicKey
+    KeyIndex        int
+    SignatureAlgo   flowcrypto.SignatureAlgorithm
+    HashAlgo        flowcrypto.HashAlgorithm
+}
+
+type FlowTransferPayload struct{
+	Sender			Flow.Address
+	AccountKey 		Flow.AccountKey
+	PrivateKey		string
+	Recipient		Flow.Address
+	Amount 			string
+	Host 			string
+	Script			[]byte
 }
