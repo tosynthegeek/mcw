@@ -82,11 +82,11 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 func CreateWallet(passphrase string) (types.Wallet, error) {
 	entropy, err := bip39.NewEntropy(128) // 12 words
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
 	}
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
 	}
 
 	return WalletFromMnemonic(mnemonic, passphrase)
@@ -165,6 +165,7 @@ func getChainParams(network string) *chaincfg.Params {
     default:
         return &chaincfg.MainNetParams
     }
+	
 }
 
 // Transfer performs a Bitcoin transfer from one address to another.
