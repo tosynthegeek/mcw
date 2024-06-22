@@ -4,10 +4,9 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/btcsuite/btcd/btcutil"
-	Flow "github.com/onflow/flow-go-sdk"
-	flowcrypto "github.com/onflow/flow-go-sdk/crypto"
 )
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -157,21 +156,7 @@ type BTCBalancePayload struct {
 	Address		string
 }
 
-type FlowWallet struct {
-    Mnemonic        string
-    PrivateKey      flowcrypto.PrivateKey
-    PublicKey       flowcrypto.PublicKey
-    KeyIndex        int
-    SignatureAlgo   flowcrypto.SignatureAlgorithm
-    HashAlgo        flowcrypto.HashAlgorithm
-}
-
-type FlowTransferPayload struct{
-	Sender			Flow.Address
-	AccountKey 		Flow.AccountKey
-	PrivateKey		string
-	Recipient		Flow.Address
-	Amount 			string
-	Host 			string
-	Script			[]byte
+type AptosBalancePayload struct {
+	Network 			string
+	Address				aptos.AccountAddress
 }
