@@ -160,3 +160,10 @@ type AptosBalancePayload struct {
 	Network 			string
 	Address				aptos.AccountAddress
 }
+
+type AptosTransferPayload struct {
+	PrivateKey		string
+	Amount			uint64
+	Recipient		aptos.AccountAddress
+	Network			string
+}

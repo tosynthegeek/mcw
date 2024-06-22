@@ -5,6 +5,7 @@ import (
 	"mcw/types"
 	"os"
 
+	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -60,4 +61,26 @@ func BtcClient(cfg types.BtcClientConfig) (*rpcclient.Client, error) {
 	}
 
 	return client, nil
+}
+
+func AptosClient(network string) (*aptos.Client, error) {
+	
+	var config aptos.NetworkConfig
+	switch network {
+	case "mainnet":
+		config = aptos.MainnetConfig
+	case "devnet":
+		config = aptos.DevnetConfig
+	case "local":
+		config = aptos.LocalnetConfig
+	default:
+		config = aptos.MainnetConfig
+	}
+
+	client, err:= aptos.NewClient(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Aptos client: %w", err)
+	}
+
+	return client, err
 }
