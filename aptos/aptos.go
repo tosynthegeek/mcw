@@ -3,7 +3,9 @@ package aptos
 import (
 	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"mcw/client"
@@ -15,7 +17,13 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
+type Aptos struct {
+	config aptos.NetworkConfig
+}
+
+var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
+
+func (a Aptos) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 	if !bip39.IsMnemonicValid(mnemonic) {
         log.Fatal("Mnemonic is not valid")
     }
@@ -53,7 +61,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 	}, nil
 }
 
-func CreateWallet(passphrase string) (types.Wallet, error) {
+func (a Aptos) CreateWallet(passphrase string) (types.Wallet, error) {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating entropy: %w", err)
@@ -63,7 +71,7 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
         return types.Wallet{}, fmt.Errorf("error generating mnemonic: %w", err)
     }
     
-    wallet, err:= WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= a.WalletFromMnemonic(mnemonic, passphrase)
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error creating wallet: %w", err)
 	}
@@ -76,7 +84,38 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 	}, nil
 }
 
-func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+func (a Aptos) GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
+	privateKeyBytes, err := base64.StdEncoding.DecodeString(privateKey)
+    if err != nil {
+        return types.Address{}, fmt.Errorf("failed to decode private key: %w", err)
+    }
+
+    // Check if the decoded bytes are the correct length for an Ed25519 private key
+    if len(privateKeyBytes) != ed25519.PrivateKeySize {
+        return types.Address{}, fmt.Errorf("invalid private key length: expected %d, got %d", ed25519.PrivateKeySize, len(privateKeyBytes))
+    }
+    // Create Aptos account from private key
+	privKey := ed25519.PrivateKey(privateKeyBytes)
+	// Create an authentication key
+	signer:= &crypto.Ed25519PrivateKey{
+		Inner: privKey,
+	}
+
+	authKey:= signer.AuthKey()
+    aptosAccount, err:= aptos.NewAccountFromSigner(signer, *authKey)
+    if err != nil {
+        fmt.Errorf("failed to create Aptos account: %w", err)
+    }
+
+    address:= aptosAccount.Address.String()
+
+	return types.Address {
+		PrivateKey: aptos.BytesToHex(privKey),
+		Address: address,
+	}, nil
+}
+
+func (a Aptos) GetBalance(bp types.BalanceParam) (types.Balance, error) {
 	client, err:= aptos.NewClient(bp.AptosConfig)
 	if err != nil {
 		return types.Balance{}, fmt.Errorf("failed to create Aptos client: %w", err)
@@ -95,7 +134,7 @@ func GetBalance(bp types.BalanceParam) (types.Balance, error) {
 	}, nil
 }
 
-func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
+func (a Aptos) GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
 
 	client, err:= client.AptosClient(tbp.AptosConfig)
 	if err != nil {
@@ -113,7 +152,7 @@ func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
 	}, nil
 }
 
-func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+func (a Aptos) GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 	client, err:= client.AptosClient(hp.AptosConfig)
 	if err != nil {
 		return types.TransactionByHash{}, fmt.Errorf("failed to create Aptos client: %w", err)
@@ -129,7 +168,7 @@ func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 	}, nil
 }
 
-func Transfer(tp types.TransferParam) (types.TransferData, error) {
+func (a Aptos) Transfer(tp types.TransferParam) (types.TransferData, error) {
 	client, err:= aptos.NewClient(tp.AptosConfig) // Use appropriate network
 	if err != nil {
 		return types.TransferData{}, fmt.Errorf("failed to create Aptos client: %w", err)
@@ -173,8 +212,14 @@ func Transfer(tp types.TransferParam) (types.TransferData, error) {
 	}, nil
 }
 
-/*
-TransferToken
-GetTokenInfo
-SmartContractCallls
-*/
+
+func (a Aptos) TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
+	return types.TransferData{}, ErrUnsupportedOperation
+}
+func (a Aptos) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
+	return types.TokenInfo{}, ErrUnsupportedOperation
+}
+
+func (a Aptos) SmartContractCall(payload types.SmartContractCallPayload) ([]interface{}, error) {
+	return nil, ErrUnsupportedOperation
+}

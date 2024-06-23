@@ -9,6 +9,18 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 )
 
+type Blockchain interface {
+    WalletFromMnemonic(mnemonic string, passphrase string) (Wallet, error)
+	CreateWallet(passphrase string) (Wallet, error)
+    GetAddressFromPrivateKey(privateKey string) (Address, error)
+    GetBalance(bp BalanceParam) (Balance, error)
+    GetTokenBalance(tbp TBParam) (TokenBalance, error)
+    GetTxByHash(hp HashParam) (TransactionByHash, error)
+    Transfer(tp TransferParam) (TransferData, error)
+    TransferToken(ttp TransferTokenParam) (TransferData, error)
+    SmartContractCall(payload SmartContractCallPayload) ([]interface{}, error)
+}
+
 // Wallet contains the mnemonic, private key, public key and address.
 type Wallet struct {
 	Mnemonic   string
@@ -158,6 +170,3 @@ type TokenMetaData struct {
 	Symbol		string
 	URL			string
 }
-
-
-

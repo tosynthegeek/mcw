@@ -5,10 +5,12 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"mcw/client"
+	"mcw/eth/internal"
 	types "mcw/types"
 
 	"github.com/ethereum/go-ethereum"
@@ -24,10 +26,14 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 )
+type Ethereum struct {
+    EndpointURL		string
+}
 
+var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
 // WalletFromMnemonic generates an Ethereum wallet from a given mnemonic and passphrase (password).
 // It returns a Wallet struct containing the mnemonic, private key, public key, and address.
-func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
+func (e Ethereum) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 
     // Verify that the provided mnemonic is valid.  
     // Validity is determined by both the number of words being appropriate, and that all the words in the mnemonic are present in the word list.
@@ -100,7 +106,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 
 // CreateWallet generates a wallet from a given passphrase (password),
 // and returns a Wallet struct containing the mnemonic, private key, public key, and Ethereum address.
-func CreateWallet(passphrase string) (types.Wallet, error){
+func (e Ethereum) CreateWallet(passphrase string) (types.Wallet, error){
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -110,7 +116,7 @@ func CreateWallet(passphrase string) (types.Wallet, error){
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
     
-    wallet, err:= WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= e.WalletFromMnemonic(mnemonic, passphrase)
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
@@ -119,7 +125,7 @@ func CreateWallet(passphrase string) (types.Wallet, error){
 }
 
 // Get address from Private Key
-func GetAddressFromPrivKateKey(privateKey string) (types.Address, error) {
+func (e Ethereum) GetAddressFromPrivKateKey(privateKey string) (types.Address, error) {
     privKeyBytes, err := hex.DecodeString(privateKey)
     if err != nil {
         return types.Address{}, fmt.Errorf("error Decoding Private Key: ", err)
@@ -146,7 +152,7 @@ func GetAddressFromPrivKateKey(privateKey string) (types.Address, error) {
 
 // GetBalance checks for the balance of the native network token of an address
 // It returns a Balance struct containing the address,  balance (in wei) and the network
-func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+func (e Ethereum) GetBalance(bp types.BalanceParam) (types.Balance, error) {
     client:= client.EthClient(bp.EndpointURL)
     account:= common.HexToAddress(bp.Address)
     balance, err:= client.BalanceAt(context.Background(), account, nil)
@@ -163,11 +169,11 @@ func GetBalance(bp types.BalanceParam) (types.Balance, error) {
 // GetTokenBalance checks for the balance of an ERC20 token for an address.
 // It takes in struct as argument `balancePayload` containing address, rpc url, network and contract address of the ERC 20 token.
 // It returns a Balance struct containing the address,  balance (in wei) and the network
-func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
+func (e Ethereum) GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
     client:= client.EthClient(tbp.EndpointURL)
     account:= common.HexToAddress(tbp.Address)
     tokenAddress:= common.HexToAddress(tbp.TokenAddress)
-    abiData, err:= JsonToABI(tbp.ABI)    
+    abiData, err:= internal.JsonToABI(tbp.ABI)    
     if err != nil {
         return types.TokenBalance{}, fmt.Errorf("error importing ABI: %w", err)
     }
@@ -190,19 +196,9 @@ func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
 	}, nil
 }
 
-//JsonToABI converts imported ABI in JSON into type abi.ABI
-func JsonToABI(abiData []byte) (abi.ABI, error) {
-    parsedABI, err := abi.JSON(bytes.NewReader(abiData))
-	if err != nil {
-		log.Fatal("failed to parse ABI: ", err)
-	}
-
-    return parsedABI, nil
-}
-
 // GetTxByHash retrieves the transaction and its pending status given its hash and an RPC URL.
 // It returns the transaction object and a boolean indicating whether the transaction is pending.
-func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error ){
+func (e Ethereum) GetTxByHash(hp types.HashParam) (types.TransactionByHash, error ){
     client:= client.EthClient(hp.EndpointURL)
     txHash:= common.HexToHash(hp.Hash)
     tx, isPending, err:= client.TransactionByHash(context.Background(), txHash)
@@ -218,7 +214,7 @@ func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error ){
 
 // TransferETH sends ETH from one wallet to  a specified recipient address. 
 // It returns the transaction hash, sender address, recipient address, amount transferred and transaction info like gas limit, gas price and block number.
-func Transfer(tp types.TransferParam) (types.TransferData, error) {
+func (e Ethereum) Transfer(tp types.TransferParam) (types.TransferData, error) {
     client:= client.EthClient(tp.EndpointURL)
     amount:= new(big.Int).SetUint64(tp.Amount)
     
@@ -294,7 +290,7 @@ func Transfer(tp types.TransferParam) (types.TransferData, error) {
 
 // TransferToken sends tokens from a wallet to a specified recipient address.
 // It returns the transaction hash, sender address, recipient address, amount transferred and transaction info like gas limit, gas price and block number.
-func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
+func (e Ethereum) TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
     var gasPrice    *big.Int
     var gasLimit    uint64
     var nonce       uint64
@@ -390,10 +386,10 @@ func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
 }
 
 // Get Token Info provides the name, symbol, decimals, token supply and token address of a token.
-func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
+func (e Ethereum) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
     client:= client.EthClient(tip.EndpointURL)
     tokenAddress:= common.HexToAddress(tip.TokenAddress)
-    abiData, err:= JsonToABI(tip.ABI)    
+    abiData, err:= internal.JsonToABI(tip.ABI)    
     if err != nil {
         return types.TokenInfo{}, fmt.Errorf("error converting ABI to JSON: %w", err)
     }
@@ -451,7 +447,7 @@ func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
 
 // SmartContractCalls performs a generic method call on a specified smart contract.
 // It accepts the contract address, method name, parameters, and ABI, and returns the method results.
-func SmartContractCalls(payload types.SmartContractCallPayload) ([]interface{}, error) {
+func SmartContractCall(payload types.SmartContractCallPayload) ([]interface{}, error) {
 	client, err := ethclient.Dial(payload.RpcUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Ethereum client: %w", err)
@@ -473,4 +469,3 @@ func SmartContractCalls(payload types.SmartContractCallPayload) ([]interface{}, 
 
 	return result, nil
 }
-

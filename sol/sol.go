@@ -1,12 +1,13 @@
 package sol
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
+	"mcw/sol/internal"
 	"mcw/types"
 
 	solClient "github.com/blocto/solana-go-sdk/client"
@@ -18,12 +19,17 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
+type Solana struct {
+	EndpointURL		string // endpoint for sol, rpcurl for eth
+}
+
+var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
+
 // WalletFromMnemonic creates a Solana account from a given mnemonic and passphrase (password) using the derivation path "m/44'/501'/0'/0"
 // It returns a Wallet struct containing the mnemonic, private key, public key, and address.
-func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
-
+func (s Solana) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 	if !bip39.IsMnemonicValid(mnemonic) {
-        log.Fatal("Mnemonic is not valid")
+        return types.Wallet{}, fmt.Errorf("Mnemonic is not valid")
     }
 
 	// Generate seed from mnemonic and passphrase
@@ -60,13 +66,13 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
     privateKeyBytes := change.Key[:32] // Solana private key is 32 bytes
     solAccount, err:= soltypes.AccountFromSeed(privateKeyBytes)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Wallet{}, fmt.Errorf("error getting account from seed: %w", err)
 	}
-	fmt.Println(privateKeyBytes)
+
 	privateKeyFull := append(solAccount.PrivateKey[:32], solAccount.PublicKey[:]...)
     privateKeyJSON, err := json.Marshal(privateKeyFull)
     if err != nil {
-        log.Fatalf("Error encoding private key: %v", err)
+        return types.Wallet{}, fmt.Errorf("Error encoding private key: %v", err)
     }
     // Construct and return the wallet
     return types.Wallet{
@@ -77,7 +83,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 	}, nil
 }
 
-func CreateWallet(passphrase string) (types.Wallet, error) {
+func (s Solana) CreateWallet(passphrase string) (types.Wallet, error) {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -87,7 +93,7 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
     
-    wallet, err:= WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= s.WalletFromMnemonic(mnemonic, passphrase)
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
 	}
@@ -96,7 +102,7 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 }
 
 
-func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
+func (s Solana) GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 	privateKeyJSON, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
 		return types.Address{}, fmt.Errorf("error decoding base64: %v", err)
@@ -115,7 +121,7 @@ func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 }
 
 // GetSolBalance
-func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+func (s Solana) GetBalance(bp types.BalanceParam) (types.Balance, error) {
 	client:= solClient.NewClient(bp.EndpointURL)
 
 	balance, err:= client.GetBalance(bp.Context, bp.Address)
@@ -130,7 +136,7 @@ func GetBalance(bp types.BalanceParam) (types.Balance, error) {
 }
 
 // GetTokenBalance
-func GetTokenBalance(bp types.TBParam) (types.TokenBalance, error) {
+func (s Solana) GetTokenBalance(bp types.TBParam) (types.TokenBalance, error) {
 	client:= solClient.NewClient(bp.EndpointURL)
 	resp, err:= client.GetTokenAccountsByOwnerByMint(bp.Context, bp.Address, bp.TokenAddress)
 	if err != nil {
@@ -156,7 +162,7 @@ func GetTokenBalance(bp types.TBParam) (types.TokenBalance, error) {
 }
 
 // GetTxByHash
-func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+func (s Solana) GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 	client:= solClient.NewClient(hp.EndpointURL)
 	tx, err:= client.GetTransaction(hp.Context, hp.Hash)
 	if err != nil {
@@ -169,7 +175,7 @@ func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 }
 
 // TransferSol
-func Transfer(tp types.TransferParam) (types.TransferData, error) {
+func (s Solana) Transfer(tp types.TransferParam) (types.TransferData, error) {
 	client:= solClient.NewClient(tp.EndpointURL)
 	privateKey, err:= base64.StdEncoding.DecodeString(tp.PrivateKey)
 	if err != nil {
@@ -222,7 +228,7 @@ func Transfer(tp types.TransferParam) (types.TransferData, error) {
 }
 
 // Transfer 
-func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
+func (s Solana) TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
 	client:= solClient.NewClient(ttp.EndpointURL)
 	privateKey, err:= base64.StdEncoding.DecodeString(ttp.PrivateKey)
 	if err != nil {
@@ -289,7 +295,7 @@ func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
 }
 
 // GetTokenInfo not working yet 
-func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
+func (s Solana) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
 	client:= solClient.NewClient(tip.EndpointURL)
 
 	mintAccountInfo, err:= client.GetAccountInfo(tip.Context, tip.TokenAddress)
@@ -326,7 +332,7 @@ func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
     //     return types.TokenInfo{}, fmt.Errorf("failed to parse mint account data: %w", err)
 
     // }
-	metadata, err:= GetTokenMetadata(tip.EndpointURL, tip.Context, mint)
+	metadata, err:= internal.GetTokenMetadata(tip.EndpointURL, tip.Context, mint)
 	if err != nil {
 		return types.TokenInfo{}, fmt.Errorf("failed to get token metadata: %w", err)
 	}
@@ -346,39 +352,6 @@ func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
 	}, nil
 }
 
-func GetTokenMetadata(endpoint string, ctx context.Context, mintAddress common.PublicKey) (types.TokenMetaData, error) {
-	client:= solClient.NewClient(endpoint)
-    metadataProgram := common.PublicKeyFromString("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s") // Metaplex Token Metadata Program
-    metadataAddress, _, err := common.FindProgramAddress(
-        [][]byte{
-            []byte("metadata"),
-            metadataProgram.Bytes(),
-            mintAddress.Bytes(),
-        },
-        metadataProgram,
-    )
-	if err != nil {
-	    return types.TokenMetaData{}, fmt.Errorf("failed to find metadata address: %w", err)
-	}
-
-    accountInfo, err := client.GetAccountInfo(ctx, metadataAddress.ToBase58())
-    if err != nil {
-        return types.TokenMetaData{}, fmt.Errorf("failed to get metadata account info: %w", err)
-    }
-
-	fmt.Println(accountInfo.Data)
-    // This is a simplified parsing. You'll need to implement proper
-    // deserialization based on the Token Metadata Program's data structure
-    var metadata types.TokenMetaData
-
-    // This assumes the metadata is stored as JSON. Adjust as necessary.
-    err = json.Unmarshal(accountInfo.Data, &metadata)
-    if err != nil {
-        return types.TokenMetaData{}, fmt.Errorf("failed to parse metadata: %w", err)
-    }
-
-
-	return metadata, nil
+func (s *Solana) SmartContractCall(payload types.SmartContractCallPayload) (interface{}, error) {
+    return nil, ErrUnsupportedOperation
 }
-
-// SmartContractCalls

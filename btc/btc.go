@@ -2,6 +2,7 @@ package btc
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"mcw/client"
@@ -17,8 +18,13 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
+type Bitcoin struct {
+	cfg types.BtcClientConfig
+}
+
+var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
 // WalletFromMnemonic creates a Bitcoin wallet from a mnemonic and passphrase.
-func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
+func (b Bitcoin) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 	if !bip39.IsMnemonicValid(mnemonic) {
 		log.Fatal("Mnemonic is not valid")
 	}
@@ -77,7 +83,7 @@ func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error
 }
 
 // CreateWallet generates a new wallet.
-func CreateWallet(passphrase string) (types.Wallet, error) {
+func (b Bitcoin) CreateWallet(passphrase string) (types.Wallet, error) {
 	entropy, err := bip39.NewEntropy(128) // 12 words
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -87,11 +93,11 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
 	}
 
-	return WalletFromMnemonic(mnemonic, passphrase)
+	return b.WalletFromMnemonic(mnemonic, passphrase)
 }
 
 // GetAddressFromPrivateKey retrieves the Bitcoin address from a WIF private key.
-func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
+func (b Bitcoin) GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 	wif, err:= btcutil.DecodeWIF(privateKey)
 	if err != nil {
 		return types.Address{}, fmt.Errorf("error decoding string: %w", err)
@@ -114,7 +120,7 @@ func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 }
 
 // GetBalance retrieves the Bitcoin balance for a given address.
-func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+func (b Bitcoin) GetBalance(bp types.BalanceParam) (types.Balance, error) {
 	address:= bp.Address
 	client, err:= client.BtcClient(bp.BtcConfig)
 	if err != nil {
@@ -153,7 +159,7 @@ func GetBalance(bp types.BalanceParam) (types.Balance, error) {
 	}, nil
 }
 
-func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+func (b Bitcoin) GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 	client, err:= client.BtcClient(hp.BtcConfig)
 	if err != nil {
 		return types.TransactionByHash{}, fmt.Errorf("error connecting to client: %w", err)
@@ -175,7 +181,7 @@ func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
 }
 
 // Transfer performs a Bitcoin transfer from one address to another.
-func Transfer(tp types.TransferParam) (types.TransferData, error) {
+func (b Bitcoin) Transfer(tp types.TransferParam) (types.TransferData, error) {
 	client, err:= client.BtcClient(tp.BtcConfig)
 	if err != nil {
 		return types.TransferData{}, fmt.Errorf("error connecting to client: %w", err)
@@ -270,9 +276,18 @@ func Transfer(tp types.TransferParam) (types.TransferData, error) {
 	}, nil
 }
 
-/*
-GetTokenBalance
-TransferToken
-GetTokenInfo
-SmartContractCallls
-*/
+// Yet to be fully implemented
+func (b Bitcoin) GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
+	return types.TokenBalance{}, ErrUnsupportedOperation
+}
+
+func (b Bitcoin) TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
+	return types.TransferData{}, ErrUnsupportedOperation
+}
+func (b Bitcoin) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
+	return types.TokenInfo{}, ErrUnsupportedOperation
+}
+
+func (b Bitcoin) SmartContractCall(payload types.SmartContractCallPayload) ([]interface{}, error) {
+	return nil, ErrUnsupportedOperation
+}
