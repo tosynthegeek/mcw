@@ -6,7 +6,7 @@ import (
 
 	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/blocto/solana-go-sdk/common"
-	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -24,70 +24,124 @@ type Address struct {
 
 type Balance struct {
 	Address 		string
-	Balance			big.Int
-	TokenAddress 	*string
+	Balance			string
+	Data			interface{}
 }
 
-type BTCBalance struct {
-	Address 		string
-	UTXO			btcutil.Amount
-	Balance			btcutil.Amount
+type BalanceParam struct {
+	Address 		string // address for sol, eth, btc
+	EndpointURL		string // endpoint for sol, rpcurl for eth
+	Network 		string // "ethereum", "bitcoin", "solana", "aptos"
+	Context 		context.Context
+	AptosConfig		aptos.NetworkConfig
+	BtcConfig		BtcClientConfig
+	AptosAddress  	aptos.AccountAddress //types.AccountAddress for aptos
 }
 
+type BtcClientConfig struct {
+	Host			string // Host is the IP address and port of the RPC server you want to connect to
+	User       		string // User is the username to use to authenticate to the RPC server.
+	Pass       		string // Pass is the passphrase to use to authenticate to the RPC server.
+	ChainParams 	*chaincfg.Params
+	UseTLS     		bool   // Whether to use the transport layer security
+	CertPath   		string // Path to TLS certificate, if UseTLS is true
+	Proxy      		string
+	ProxyUser  		string
+	ProxyPass  		string
+	ExtraHeaders 	map[string]string
+}
 
-type BalancePayload struct {
+type TBParam struct {
 	Address 		string
-	RpcUrl 			string
-	Network 		*string
-	TokenAddress 	string
+	EndpointURL		string
+	Network 		string
+	Context 		context.Context
+	TokenAddress 	string // Mint address for solana
+	AptosConfig		aptos.NetworkConfig
+	AptosAddress  	aptos.AccountAddress //types.AccountAddress for aptos
 	ABI				[]byte
 }
 
-type TransferETHPayload struct{
-	PrivateKey		string
-	RpcUrl 			string
-	Recipient		string
-	Amount			big.Int
-	GasPrice		*big.Int
-	GasLimit		*uint64
-	Nonce			*uint64
-	Network			*string
+
+type TokenBalance struct {
+	Address 		string
+	Balance			big.Int
+	TokenAddress 	*string
+	Data			interface{}
 }
 
-type TransferTokenPayload struct{
+type HashParam struct {
+	Hash 		string // address for sol, eth, btc
+	EndpointURL		string // endpoint for sol, rpcurl for eth
+	Network 		string // "ethereum", "bitcoin", "solana", "aptos"
+	Context 		context.Context
+	AptosConfig		aptos.NetworkConfig
+	BtcConfig		BtcClientConfig
+}
+
+type TransactionByHash struct {
+	Pending			bool
+	Transaction		interface{}
+}
+type TransferParam struct {
 	PrivateKey		string
-	RpcUrl 			string
+	Sender 			string
+	EndpointURL		string
 	Recipient		string
-	TokenAddress	string
-	Amount			big.Int
+	AptosRecipient  aptos.AccountAddress //types.AccountAddress for aptos
+	Amount			uint64
 	GasPrice		*big.Int
 	GasLimit		*uint64
 	Nonce			*uint64
-	Network			*string
+	Network			string
+
+	// Config
+	Context 		context.Context
+	AptosConfig		aptos.NetworkConfig
+	BtcConfig		BtcClientConfig
 }
 
 type TransferData struct {
 	Hash        string  // Transaction hash
-    FromAddress string  // Sender's address
-    ToAddress   string  // Recipient's address
-    Amount      *big.Int // Amount transferred
-    GasLimit     uint64   // Gas used for the transaction
-    GasPrice    *big.Int // Gas price used
-    BlockNumber uint64
+	Data		interface{}
+}
+type TransferTokenParam struct{
+	PrivateKey		string
+	EndpointURL		string
+	Recipient		string
+	Token 			string // Token address for eth and Mint for Solana
+	Amount			uint64
+	GasPrice		*big.Int //eth
+	GasLimit		*uint64 //eth
+	Nonce			*uint64 //eth
+	Network			string
+
+	Context			context.Context // sol
 }
 
-type TokenInfoPayload struct {
-	RpcUrl 			string
+type TokenInfoParam struct {
+	EndpointURL		string
 	TokenAddress 	string
 	ABI				[]byte
+
+	Context			context.Context // sol
 }
 
 type TokenInfo struct {
 	Name 			string
 	Symbol			string
 	Decimals		uint8
-	TotalSupply		big.Int
+	Supply			big.Int
 	TokenAddress	string
+
+	// Additional for SOL Token Info
+	URL             	string
+	Mint				common.PublicKey
+	Owner           	common.PublicKey
+	MintAuthority   	common.PublicKey
+	FreezeAuthority 	common.PublicKey
+	IsInitialize	   	bool
+	AssociatedAccount 	string
 }
 
 type SmartContractCallPayload struct {
@@ -99,71 +153,11 @@ type SmartContractCallPayload struct {
 	ABI          []byte
 }
 
-type TransferSolPayload struct{
-	Context			context.Context				
-	PrivateKey		string
-	RpcUrl 			string
-	Recipient		string
-	Amount			uint64 // In Lamports 
-	Network			*string
-}
-
-type TransferSolTokenPayload struct{
-	Context			context.Context	
-	PrivateKey		string
-	RpcUrl 			string
-	Recipient		string
-	Mint			string
-	Amount			uint64 // In Lamports 
-	Network			*string
-}
-
 type TokenMetaData struct {
 	Name 		string
 	Symbol		string
 	URL			string
 }
 
-type SolTokenInfo struct {
-	Name            	string
-	Symbol          	string
-	URL             	string
-	Supply          	uint64
-	Mint				common.PublicKey
-	Decimals        	uint8
-	Owner           	common.PublicKey
-	MintAuthority   	common.PublicKey
-	FreezeAuthority 	common.PublicKey
-	IsInitialize	   	bool
-	AssociatedAccount 	string
-}
 
-type BtcClientConfig struct {
-	Host			string // Host is the IP address and port of the RPC server you want to connect to
-	User       		string // User is the username to use to authenticate to the RPC server.
-	Pass       		string // Pass is the passphrase to use to authenticate to the RPC server.
-	Network    		string // "mainnet", "testnet", "regtest", or "signet"
-	UseTLS     		bool   // Whether to use the transport layer security
-	CertPath   		string // Path to TLS certificate, if UseTLS is true
-	Proxy      		string
-	ProxyUser  		string
-	ProxyPass  		string
-	ExtraHeaders 	map[string]string
-}
 
-type BTCBalancePayload struct {
-	Config		BtcClientConfig
-	Address		string
-}
-
-type AptosBalancePayload struct {
-	Network 			string
-	Address				aptos.AccountAddress
-}
-
-type AptosTransferPayload struct {
-	PrivateKey		string
-	Amount			uint64
-	Recipient		aptos.AccountAddress
-	Network			string
-}

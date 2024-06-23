@@ -8,11 +8,9 @@ import (
 	"mcw/types"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/tyler-smith/go-bip32"
@@ -116,18 +114,19 @@ func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 }
 
 // GetBalance retrieves the Bitcoin balance for a given address.
-func GetBalance(btcPBalancePayload types.BTCBalancePayload) (types.BTCBalance, error) {
-	address:= btcPBalancePayload.Address
-	client, err:= client.BtcClient(btcPBalancePayload.Config, )
+func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+	address:= bp.Address
+	client, err:= client.BtcClient(bp.BtcConfig)
 	if err != nil {
-		return types.BTCBalance{}, fmt.Errorf("error connecting to client: %w", err)
+		return types.Balance{}, fmt.Errorf("error connecting to client: %w", err)
 	}
 	defer client.Shutdown()
 	unspent, err := client.ListUnspent()
 	if err != nil {
-		return types.BTCBalance{}, fmt.Errorf("error returning all unspent transactions: %w", err)
+		return types.Balance{}, fmt.Errorf("error returning all unspent transactions: %w", err)
 	}
 
+	// Get unspent transaction outputs
 	var utxo btcutil.Amount
 	for _, u := range unspent {
 		if u.Address == address {
@@ -136,67 +135,79 @@ func GetBalance(btcPBalancePayload types.BTCBalancePayload) (types.BTCBalance, e
 	}
 
 	// Parse the address
-    addr, err := btcutil.DecodeAddress(address, getChainParams(btcPBalancePayload.Config.Network))
+    addr, err := btcutil.DecodeAddress(address, bp.BtcConfig.ChainParams)
     if err != nil {
-        return types.BTCBalance{}, fmt.Errorf("invalid address: %w", err)
+        return types.Balance{}, fmt.Errorf("invalid address: %w", err)
     }
 
     // Get the balance for the specific address
     balance, err := client.GetReceivedByAddress(addr)
     if err != nil {
-        return types.BTCBalance{}, fmt.Errorf("error getting balance: %w", err)
+        return types.Balance{}, fmt.Errorf("error getting balance: %w", err)
     }
 
-	return types.BTCBalance{
-		UTXO: utxo,
+	return types.Balance{
+		Data: utxo,
 		Address: address,
-		Balance: balance,
+		Balance: string(balance),
 	}, nil
 }
 
-func getChainParams(network string) *chaincfg.Params {
-    switch network {
-    case "testnet":
-        return &chaincfg.TestNet3Params
-    case "regtest":
-        return &chaincfg.RegressionNetParams
-    case "signet":
-        return &chaincfg.SigNetParams
-    default:
-        return &chaincfg.MainNetParams
-    }
+func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+	client, err:= client.BtcClient(hp.BtcConfig)
+	if err != nil {
+		return types.TransactionByHash{}, fmt.Errorf("error connecting to client: %w", err)
+	}
+	defer client.Shutdown()
+
+	chainHash, err:= chainhash.NewHashFromStr(hp.Hash)
+	if err != nil {
+		return types.TransactionByHash{}, fmt.Errorf("error creating hash from string: %w", err)
+	}
+	tx, err:= client.GetTransaction(chainHash)
+	if err != nil {
+		return types.TransactionByHash{}, fmt.Errorf("error getting transaction: %w", err)
+	}
 	
+	return types.TransactionByHash{
+		Transaction: tx,
+	}, nil
 }
 
 // Transfer performs a Bitcoin transfer from one address to another.
-func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey string, amount btcutil.Amount) (string, error) {
-	wif, err := btcutil.DecodeWIF(privateKey)
+func Transfer(tp types.TransferParam) (types.TransferData, error) {
+	client, err:= client.BtcClient(tp.BtcConfig)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode WIF: %w", err)
+		return types.TransferData{}, fmt.Errorf("error connecting to client: %w", err)
 	}
-
-	fromAddr, err := btcutil.DecodeAddress(fromAddress, &chaincfg.MainNetParams)
+	defer client.Shutdown()
+	wif, err := btcutil.DecodeWIF(tp.PrivateKey)
 	if err != nil {
-		return "", fmt.Errorf("invalid from address: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to decode WIF: %w", err)
 	}
-	toAddr, err := btcutil.DecodeAddress(toAddress, &chaincfg.MainNetParams)
+	amount:= btcutil.Amount(tp.Amount)
+	fromAddr, err := btcutil.DecodeAddress(tp.Sender, &chaincfg.MainNetParams)
 	if err != nil {
-		return "", fmt.Errorf("invalid to address: %w", err)
+		return types.TransferData{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	toAddr, err := btcutil.DecodeAddress(tp.Recipient, &chaincfg.MainNetParams)
+	if err != nil {
+		return types.TransferData{}, fmt.Errorf("invalid to address: %w", err)
 	}
 
 	unspent, err := client.ListUnspent()
 	if err != nil {
-		return "", fmt.Errorf("failed to list unspent transactions: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to list unspent transactions: %w", err)
 	}
 
 	var inputs []btcutil.Amount
 	var utxos []*btcutil.Tx
 	var total btcutil.Amount
 	for _, u := range unspent {
-		if u.Address == fromAddress {
+		if u.Address == tp.Sender {
 			hash, err := chainhash.NewHashFromStr(u.TxID)
 			if err != nil {
-				return "", fmt.Errorf("failed to create hash: %w", err)
+				return types.TransferData{}, fmt.Errorf("failed to create hash: %w", err)
 			}
 			op := wire.NewOutPoint(hash, u.Vout)
 			txIn := wire.NewTxIn(op, nil, nil)
@@ -212,7 +223,7 @@ func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey strin
 	}
 
 	if total < amount+1000 {
-		return "", fmt.Errorf("insufficient funds")
+		return types.TransferData{}, fmt.Errorf("insufficient funds")
 	}
 
 	tx := wire.NewMsgTx(wire.TxVersion)
@@ -222,7 +233,7 @@ func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey strin
 
 	pkScript, err := txscript.PayToAddrScript(toAddr)
 	if err != nil {
-		return "", fmt.Errorf("failed to create pay-to-addr script: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create pay-to-addr script: %w", err)
 	}
 	txOut := wire.NewTxOut(int64(amount), pkScript)
 	tx.AddTxOut(txOut)
@@ -230,14 +241,14 @@ func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey strin
 	change := total - amount - 1000 // Subtract fee
 	changeScript, err := txscript.PayToAddrScript(fromAddr)
 	if err != nil {
-		return "", fmt.Errorf("failed to create change script: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create change script: %w", err)
 	}
 	tx.AddTxOut(wire.NewTxOut(int64(change), changeScript))
 
 	for i, txIn := range tx.TxIn {
 		sigScript, err := txscript.SignatureScript(tx, i, utxos[i].MsgTx().TxOut[txIn.PreviousOutPoint.Index].PkScript, txscript.SigHashAll, wif.PrivKey, true)
 		if err != nil {
-			return "", fmt.Errorf("failed to create signature script: %w", err)
+			return types.TransferData{}, fmt.Errorf("failed to create signature script: %w", err)
 		}
 		txIn.SignatureScript = sigScript
 	}
@@ -245,32 +256,23 @@ func Transfer(client *rpcclient.Client, fromAddress, toAddress, privateKey strin
 	// var buf []byte
 	err = tx.Serialize(log.Writer())
 	if err != nil {
-		return "", fmt.Errorf("failed to serialize transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to serialize transaction: %w", err)
 	}
 
 	txHash, err := client.SendRawTransaction(tx, true)
 	if err != nil {
-		return "", fmt.Errorf("failed to send transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
 
-	return txHash.String(), nil
+	return types.TransferData{
+		 Hash: txHash.String(),
+		 Data: tx,
+	}, nil
 }
 
-func GetTxByHash(config types.BtcClientConfig, hash string) (*btcjson.GetTransactionResult, error) {
-	client, err:= client.BtcClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to client: %w", err)
-	}
-	defer client.Shutdown()
-
-	chainHash, err:= chainhash.NewHashFromStr(hash)
-	if err != nil {
-		return nil, fmt.Errorf("error creating hash from string: %w", err)
-	}
-	tx, err:= client.GetTransaction(chainHash)
-	if err != nil {
-		return nil, fmt.Errorf("error getting transaction: %w", err)
-	}
-	
-	return tx, nil
-}
+/*
+GetTokenBalance
+TransferToken
+GetTokenInfo
+SmartContractCallls
+*/

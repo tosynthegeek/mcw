@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"mcw/types"
 
 	solClient "github.com/blocto/solana-go-sdk/client"
@@ -19,9 +20,9 @@ import (
 
 // WalletFromMnemonic creates a Solana account from a given mnemonic and passphrase (password) using the derivation path "m/44'/501'/0'/0"
 // It returns a Wallet struct containing the mnemonic, private key, public key, and address.
-func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
+func WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
 
-	 if !bip39.IsMnemonicValid(mnemonic) {
+	if !bip39.IsMnemonicValid(mnemonic) {
         log.Fatal("Mnemonic is not valid")
     }
 
@@ -31,28 +32,28 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
     // Generate master key from seed
     masterKey, err := bip32.NewMasterKey(seed)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("failed to create master key: %w", err)
     }
 
 	// Derive the path m/44'/501'/0'/0'
     purpose, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("failed to derive purpose key: %w", err)
     }
 
 	coinType, err := purpose.NewChildKey(bip32.FirstHardenedChild + 501)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("failed to derive coin type key: %w", err)
     }
 
     account, err := coinType.NewChildKey(bip32.FirstHardenedChild + 0)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("failed to derive account key: %w", err)
     }
 
     change, err := account.NewChildKey(bip32.FirstHardenedChild + 0)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("failed to derive change key: %w", err)
     }
 
     // Create Solana account from the private key
@@ -73,108 +74,119 @@ func WalletFromMnemonic(mnemonic string, passphrase string) types.Wallet {
         PrivateKey: string(privateKeyJSON),
         PublicKey:  solAccount.PublicKey.String(),
         Address:    solAccount.PublicKey.ToBase58(),
-	}
+	}, nil
 }
 
-func CreateWallet(passphrase string) types.Wallet {
+func CreateWallet(passphrase string) (types.Wallet, error) {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
     }
     mnemonic, err:= bip39.NewMnemonic(entropy)
     if err != nil {
-        log.Fatal(err.Error())
+        return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
     
-    wallet:= WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= WalletFromMnemonic(mnemonic, passphrase)
+	if err != nil {
+		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
+	}
 
-    return wallet
+    return wallet, nil
 }
 
 
-func GetAddressFromPrivateKey(privateKey string) types.Address {
+func GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
 	privateKeyJSON, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
-		log.Fatalf("Error decoding base64: %v", err)
+		return types.Address{}, fmt.Errorf("error decoding base64: %v", err)
 	}
 
 	privateKeyBytes := privateKeyJSON[:64]
 	wallet, err := soltypes.AccountFromBytes(privateKeyBytes)
 	if err != nil {
-		log.Fatalf("Error creating Solana account: %v", err)
+		return types.Address{}, fmt.Errorf("error creating Solana account: %v", err)
 	}
 
 	return types.Address{
 		Address:    wallet.PublicKey.ToBase58(),
 		PrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-	}
+	}, nil
 }
 
 // GetSolBalance
-func GetSolBalance(endpoint string, ctx context.Context, address string) uint {
-	client:= solClient.NewClient(endpoint)
+func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+	client:= solClient.NewClient(bp.EndpointURL)
 
-	balance, err:= client.GetBalance(ctx, address)
+	balance, err:= client.GetBalance(bp.Context, bp.Address)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.Balance{}, fmt.Errorf("error fetching balance: %w", err)
 	}
 
-	return uint(balance)
+	return types.Balance{
+		Address: bp.Address,
+		Balance: string(balance),
+	}, nil
 }
 
 // GetTokenBalance
-func GetTokenBalance(endpoint string, ctx context.Context, address string, tokenMintAddress string) (solClient.TokenAmount, error) {
-	client:= solClient.NewClient(endpoint)
-	resp, err:= client.GetTokenAccountsByOwnerByMint(ctx, address, tokenMintAddress)
+func GetTokenBalance(bp types.TBParam) (types.TokenBalance, error) {
+	client:= solClient.NewClient(bp.EndpointURL)
+	resp, err:= client.GetTokenAccountsByOwnerByMint(bp.Context, bp.Address, bp.TokenAddress)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
     if len(resp) == 0 {
-		return solClient.TokenAmount{}, fmt.Errorf("no token accounts found for address: %s", address)
+		return types.TokenBalance{}, fmt.Errorf("no token accounts found for address: %s", bp.Address)
 	}
 
     tokenAccount := resp[0].PublicKey
 
 	// Fetch the balance for the token account
-	balanceResp, err := client.GetTokenAccountBalance(ctx, tokenAccount.ToBase58())
+	balanceResp, err := client.GetTokenAccountBalance(bp.Context, tokenAccount.ToBase58())
 	if err != nil {
-        return solClient.TokenAmount{}, fmt.Errorf("error fetching token balance: %w", err)
+        return types.TokenBalance{}, fmt.Errorf("error fetching token balance: %w", err)
 	}
 
-    return balanceResp, nil
+    return types.TokenBalance{
+		Address: bp.Address,
+		Data: balanceResp,
+	}, nil
 }
 
 // GetTxByHash
-func GetTxByHash(endpoint string, ctx context.Context, hash string) (*solClient.Transaction) {
-	client:= solClient.NewClient(endpoint)
-	tx, err:= client.GetTransaction(ctx, hash)
+func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+	client:= solClient.NewClient(hp.EndpointURL)
+	tx, err:= client.GetTransaction(hp.Context, hp.Hash)
 	if err != nil {
-		log.Fatal(err.Error())
+		return types.TransactionByHash{}, fmt.Errorf("error getting transaction: %w", err)
 	}
 
-	return tx
+	return types.TransactionByHash{
+		Transaction: tx,
+	}, nil
 }
 
 // TransferSol
-func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
-	client:= solClient.NewClient(transferPayload.RpcUrl)
-	privateKey, err:= base64.StdEncoding.DecodeString(transferPayload.PrivateKey)
+func Transfer(tp types.TransferParam) (types.TransferData, error) {
+	client:= solClient.NewClient(tp.EndpointURL)
+	privateKey, err:= base64.StdEncoding.DecodeString(tp.PrivateKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode private key: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to decode private key: %w", err)
 	}
 
 	sender, err:= soltypes.AccountFromBytes(privateKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to create account from private key: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create account from private key: %w", err)
 	}
 
-	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
+	recipient:= common.PublicKeyFromString(tp.Recipient)
 	fmt.Println("Recipient: ", recipient)
 	
-	value, err:= client.GetLatestBlockhash(transferPayload.Context)
+	value, err:= client.GetLatestBlockhash(tp.Context)
 	if err != nil {
-		return "", fmt.Errorf("failed to get latest blockhash: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to get latest blockhash: %w", err)
 	}
 
 	latestBlockHash:= value.Blockhash
@@ -188,54 +200,57 @@ func TransferSol(transferPayload types.TransferSolPayload) (string, error) {
 				system.Transfer(system.TransferParam{
 					From: sender.PublicKey,
 					To: recipient,
-					Amount: transferPayload.Amount,
+					Amount: tp.Amount,
 				}),
 			},
 		}),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	txHash, err := client.SendTransaction(transferPayload.Context, tx)
+	txHash, err := client.SendTransaction(tp.Context, tx)
 	if err != nil {
-		return "", fmt.Errorf("failed to send transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
 	fmt.Println(txHash)
 
-	return txHash, nil
+	return types.TransferData{
+		Hash: txHash,
+		Data: tx,
+	}, nil
 }
 
 // Transfer 
-func TransferToken(transferPayload types.TransferSolTokenPayload) (string, error) {
-	client:= solClient.NewClient(transferPayload.RpcUrl)
-	privateKey, err:= base64.StdEncoding.DecodeString(transferPayload.PrivateKey)
+func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
+	client:= solClient.NewClient(ttp.EndpointURL)
+	privateKey, err:= base64.StdEncoding.DecodeString(ttp.PrivateKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode private key: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to decode private key: %w", err)
 	}
 
 	sender, err:= soltypes.AccountFromBytes(privateKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to create account from private key: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create account from private key: %w", err)
 	}
 
-	recipient:= common.PublicKeyFromString(transferPayload.Recipient)
-	mintPubkey := common.PublicKeyFromString(transferPayload.Mint)
+	recipient:= common.PublicKeyFromString(ttp.Recipient)
+	mintPubkey := common.PublicKeyFromString(ttp.Token)
 
 	// Get token accounts
     fromTokenAccount, _, err := common.FindAssociatedTokenAddress(sender.PublicKey, mintPubkey)
     if err != nil {
-        return "", fmt.Errorf("failed to find sender's associated token address: %w", err)
+        return types.TransferData{}, fmt.Errorf("failed to find sender's associated token address: %w", err)
     }
 
     toTokenAccount, _, err := common.FindAssociatedTokenAddress(recipient, mintPubkey)
     if err != nil {
-        return "", fmt.Errorf("failed to find recipient's associated token address: %w", err)
+        return types.TransferData{}, fmt.Errorf("failed to find recipient's associated token address: %w", err)
     }
 	
-	value, err:= client.GetLatestBlockhash(transferPayload.Context)
+	value, err:= client.GetLatestBlockhash(ttp.Context)
 	if err != nil {
-		return "", fmt.Errorf("failed to get latest blockhash: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to get latest blockhash: %w", err)
 	}
 
 	latestBlockHash:= value.Blockhash
@@ -250,84 +265,84 @@ func TransferToken(transferPayload types.TransferSolTokenPayload) (string, error
 					From: fromTokenAccount,
 					To: toTokenAccount,
 					Auth: sender.PublicKey,
-					Amount: transferPayload.Amount,
+					Amount: ttp.Amount,
 					Signers: []common.PublicKey{sender.PublicKey},
 				}),
 			},
 		}),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	txHash, err := client.SendTransaction(transferPayload.Context, tx)
+	txHash, err := client.SendTransaction(ttp.Context, tx)
 	if err != nil {
-		return "", fmt.Errorf("failed to send transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to send transaction: %w", err)
 	}
 	fmt.Println(txHash)
 
-	return txHash, nil
+	return types.TransferData{
+		Hash: txHash,
+		Data: tx,
+	}, nil
 
 }
 
 // GetTokenInfo not working yet 
-func GetTokenInfo(endpoint string, ctx context.Context, tokenAddress string) (types.SolTokenInfo, error){
-	client:= solClient.NewClient(endpoint)
+func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
+	client:= solClient.NewClient(tip.EndpointURL)
 
-	mintAccountInfo, err:= client.GetAccountInfo(ctx, tokenAddress)
+	mintAccountInfo, err:= client.GetAccountInfo(tip.Context, tip.TokenAddress)
 	if err != nil {
-		return types.SolTokenInfo{}, fmt.Errorf("failed to get account info: %w", err)
+		return types.TokenInfo{}, fmt.Errorf("failed to get account info: %w", err)
 	}
 
 	// Check if the account is owned by the Token Program
     tokenProgramID := common.TokenProgramID
     if mintAccountInfo.Owner != tokenProgramID {
-        return types.SolTokenInfo{}, fmt.Errorf("account is not owned by the Token Program (owner: %s)", mintAccountInfo.Owner)
+        return types.TokenInfo{}, fmt.Errorf("account is not owned by the Token Program (owner: %s)", mintAccountInfo.Owner)
     }
 
-    // Log the size of the account data for debugging
-    log.Printf("Account data size: %d bytes", len(mintAccountInfo.Data))
-
 	// if len(mintAccountInfo.Data) != 165 {
-	// 	return types.SolTokenInfo{}, fmt.Errorf("invalid account data size: expected 165 bytes, got %d", len(mintAccountInfo.Data))
+	// 	return types.TokenInfo{}, fmt.Errorf("invalid account data size: expected 165 bytes, got %d", len(mintAccountInfo.Data))
 	// }
 
 	mintAccount, err:= token.MintAccountFromData(mintAccountInfo.Data)
 	if err != nil {
-		return types.SolTokenInfo{}, fmt.Errorf("failed to parse token account data: %w", err)
+		return types.TokenInfo{}, fmt.Errorf("failed to parse token account data: %w", err)
 	}
 
 
-	mint:= common.PublicKeyFromString(tokenAddress)
+	mint:= common.PublicKeyFromString(tip.TokenAddress)
 	// // mintAddress:= mint.ToBase58()
 	// mintAccountInfo, err := client.GetAccountInfo(ctx, tokenAddress)
     // if err != nil {
-    //     return types.SolTokenInfo{}, fmt.Errorf("failed to get mint account info: %w", err)
+    //     return types.TokenInfo{}, fmt.Errorf("failed to get mint account info: %w", err)
     // }
 
     // // Parse mint account data
     // mintInfo, err := token.MintAccountFromData(mintAccountInfo.Data)
     // if err != nil {
-    //     return types.SolTokenInfo{}, fmt.Errorf("failed to parse mint account data: %w", err)
+    //     return types.TokenInfo{}, fmt.Errorf("failed to parse mint account data: %w", err)
 
     // }
-	metadata, err:= GetTokenMetadata(endpoint, ctx, mint)
+	metadata, err:= GetTokenMetadata(tip.EndpointURL, tip.Context, mint)
 	if err != nil {
-		return types.SolTokenInfo{}, fmt.Errorf("failed to get token metadata: %w", err)
+		return types.TokenInfo{}, fmt.Errorf("failed to get token metadata: %w", err)
 	}
 
-	return types.SolTokenInfo {
+	return types.TokenInfo {
 		Name: metadata.Name,
 		Symbol: metadata.Symbol,
 		URL: metadata.URL,
-		Supply: mintAccount.Supply,
+		Supply: *big.NewInt(int64(mintAccount.Supply)),
 		Mint: mint,
 		Decimals:  mintAccount.Decimals,
 		Owner: mintAccountInfo.Owner,
 		MintAuthority: *mintAccount.MintAuthority,
 		FreezeAuthority: *mintAccount.FreezeAuthority,
 		IsInitialize: mintAccount.IsInitialized,
-		AssociatedAccount: tokenAddress,
+		AssociatedAccount: tip.TokenAddress,
 	}, nil
 }
 
@@ -361,10 +376,6 @@ func GetTokenMetadata(endpoint string, ctx context.Context, mintAddress common.P
     if err != nil {
         return types.TokenMetaData{}, fmt.Errorf("failed to parse metadata: %w", err)
     }
-
-    fmt.Printf("Name: %s\n", metadata.Name)
-    fmt.Printf("Symbol: %s\n", metadata.Symbol)
-    fmt.Printf("URI: %s\n", metadata.URL)
 
 
 	return metadata, nil

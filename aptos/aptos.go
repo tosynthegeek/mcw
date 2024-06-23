@@ -10,7 +10,6 @@ import (
 	"mcw/types"
 
 	"github.com/aptos-labs/aptos-go-sdk"
-	"github.com/aptos-labs/aptos-go-sdk/api"
 	"github.com/aptos-labs/aptos-go-sdk/crypto"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/pbkdf2"
@@ -77,59 +76,68 @@ func CreateWallet(passphrase string) (types.Wallet, error) {
 	}, nil
 }
 
-func GetBalance(balancePayload types.AptosBalancePayload) (uint64, error) {
-
-	client, err:= client.AptosClient(balancePayload.Network)
+func GetBalance(bp types.BalanceParam) (types.Balance, error) {
+	client, err:= aptos.NewClient(bp.AptosConfig)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create Aptos client: %w", err)
+		return types.Balance{}, fmt.Errorf("failed to create Aptos client: %w", err)
 	}
+
+	aptosAddress:= bp.AptosAddress
 	
-	balance, err:= client.AccountAPTBalance(balancePayload.Address)
+	balance, err:= client.AccountAPTBalance(aptosAddress)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get account balance: %w", err)
+		return types.Balance{}, fmt.Errorf("failed to get account balance: %w", err)
 	}
 
-	return balance, nil
+	return types.Balance{
+		Address: aptosAddress.String(),
+		Balance: string(balance),
+	}, nil
 }
 
-func GetTokenBalances(balancePayload types.AptosBalancePayload) ([]aptos.CoinBalance, error) {
+func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
 
-	client, err:= client.AptosClient(balancePayload.Network)
+	client, err:= client.AptosClient(tbp.AptosConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Aptos client: %w", err)
+		return types.TokenBalance{}, fmt.Errorf("failed to create Aptos client: %w", err)
 	}
 	
-	balances, err:= client.GetCoinBalances(balancePayload.Address)
+	balances, err:= client.GetCoinBalances(tbp.AptosAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get coin balances: %w", err)
+		return types.TokenBalance{}, fmt.Errorf("failed to get coin balances: %w", err)
 	}
 
-	return balances, nil
+	return types.TokenBalance{
+		Address: string(tbp.Address),
+		Data: balances,
+	}, nil
 }
 
-func GetTxByHash(network string, hash string) (*api.Transaction, error) {
-	client, err:= client.AptosClient(network)
+func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
+	client, err:= client.AptosClient(hp.AptosConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Aptos client: %w", err)
+		return types.TransactionByHash{}, fmt.Errorf("failed to create Aptos client: %w", err)
 	}
 	
-	tx, err:= client.TransactionByHash(hash)
+	tx, err:= client.TransactionByHash(hp.Hash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transaction by hash: %w", err)
+		return types.TransactionByHash{}, fmt.Errorf("failed to get transaction by hash: %w", err)
 	}
 
-	return tx, nil
+	return types.TransactionByHash{
+		Transaction: tx,
+	}, nil
 }
 
-func TransferAPT(transferPayload types.AptosTransferPayload) (*api.SubmitTransactionResponse, *api.UserTransaction, error) {
-	client, err := client.AptosClient(transferPayload.Network) // Use appropriate network
+func Transfer(tp types.TransferParam) (types.TransferData, error) {
+	client, err:= aptos.NewClient(tp.AptosConfig) // Use appropriate network
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create Aptos client: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to create Aptos client: %w", err)
 	}
 
-	senderPrivKeyBytes, err := hex.DecodeString(transferPayload.PrivateKey)
+	senderPrivKeyBytes, err := hex.DecodeString(tp.PrivateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid sender private key: %w", err)
+		return types.TransferData{}, fmt.Errorf("invalid sender private key: %w", err)
 	}
 	senderPrivKey := ed25519.PrivateKey(senderPrivKeyBytes)
 	signer:= &crypto.Ed25519PrivateKey{
@@ -137,32 +145,36 @@ func TransferAPT(transferPayload types.AptosTransferPayload) (*api.SubmitTransac
 	}
 	txSigner, err:= aptos.NewAccountFromSigner(signer, *signer.AuthKey())
 	if err != nil {
-		return nil, nil, fmt.Errorf("error from signer: %w", err)
+		return types.TransferData{}, fmt.Errorf("error from signer: %w", err)
 	}
 
-	amount := transferPayload.Amount
-	toAddress := transferPayload.Recipient
+	amount := tp.Amount
+	toAddress := tp.AptosRecipient
 
 	// Create a transaction payload
 	txPayload, err := aptos.APTTransferTransaction(client, txSigner, toAddress, amount)
 
 	signedTx, err:= txPayload.SignedTransaction(txSigner)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error signing transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("error signing transaction: %w", err)
 	}
 
 	// Submit the transaction
 	tx, err := client.SubmitTransaction(signedTx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to submit transaction: %w", err)
+		return types.TransferData{}, fmt.Errorf("failed to submit transaction: %w", err)
 	}
 	txHash:= tx.Hash
 	data, err:= client.WaitForTransaction(txHash)
 
-	return tx, data, nil
+	return types.TransferData{
+		Hash: txHash,
+		Data: data,
+	}, nil
 }
 
-/* 
-Transfer coin
-
+/*
+TransferToken
+GetTokenInfo
+SmartContractCallls
 */

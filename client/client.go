@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/aptos-labs/aptos-go-sdk"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -41,20 +40,6 @@ func BtcClient(cfg types.BtcClientConfig) (*rpcclient.Client, error) {
 		}
 		connCfg.Certificates = certs
 	}
-
-	switch cfg.Network {
-	case "mainnet":
-		connCfg.Params = chaincfg.MainNetParams.Name
-	case "testnet":
-		connCfg.Params = chaincfg.TestNet3Params.Name
-	case "regtest":
-		connCfg.Params = chaincfg.RegressionNetParams.Name
-	case "signet":
-		connCfg.Params = chaincfg.SigNetParams.Name
-	default:
-		connCfg.Params = chaincfg.MainNetParams.Name // Default to mainnet
-	}
-
 	client, err := rpcclient.New(connCfg, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RPC client: %v", err)
@@ -63,19 +48,7 @@ func BtcClient(cfg types.BtcClientConfig) (*rpcclient.Client, error) {
 	return client, nil
 }
 
-func AptosClient(network string) (*aptos.Client, error) {
-	
-	var config aptos.NetworkConfig
-	switch network {
-	case "mainnet":
-		config = aptos.MainnetConfig
-	case "devnet":
-		config = aptos.DevnetConfig
-	case "local":
-		config = aptos.LocalnetConfig
-	default:
-		config = aptos.MainnetConfig
-	}
+func AptosClient(config aptos.NetworkConfig) (*aptos.Client, error) {
 
 	client, err:= aptos.NewClient(config)
 	if err != nil {
