@@ -4,7 +4,9 @@ MCW is a Go package that provides a unified interface for managing wallets, gene
 
 ## Installation
 
+```go
 go get ...
+```
 
 ## Usage
 
@@ -33,7 +35,9 @@ import "github.com/tosynthegeek/mcw/wallet"
 Errors in the interface are returned in Go's idiomatic way as the second return value. The error messages provide detailed information about what went wrong. The error ErrUnsupportedNetwork is returned when an unsupported network is specified.
 
 ```go
-var ErrUnsupportedNetwork = errors.New("unsupported network: the specified network is not recognized. Please ensure that the network name is correct and supported by the application.")
+var ErrUnsupportedNetwork = errors.New(
+    "unsupported network: the specified network is not recognized. Please ensure that the network name is correct and supported by the application."
+    )
 ```
 
 ## Contribute
