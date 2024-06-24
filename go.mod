@@ -10,6 +10,8 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/ethereum/go-ethereum v1.14.5
+	github.com/onflow/cadence v0.42.12
+	github.com/onflow/flow-go-sdk v0.45.0
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.24.0
@@ -51,9 +53,8 @@ require (
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/onflow/atree v0.6.0 // indirect
-	github.com/onflow/cadence v0.42.12 // indirect
-	github.com/onflow/crypto v0.25.1 // indirect
-	github.com/onflow/flow-go-sdk v0.46.3 // indirect
+	github.com/onflow/crypto v0.24.9 // indirect
+	github.com/onflow/flow-go/crypto v0.24.9 // indirect
 	github.com/onflow/go-ethereum v1.13.4 // indirect
 	github.com/onflow/sdks v0.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
