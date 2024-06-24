@@ -40,7 +40,7 @@ func (e Ethereum) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error)
     if !bip39.IsMnemonicValid(wp.Mnemonic) {
         fmt.Errorf("Mnemonic is not valid")
     }
-
+    
     // Generate seed from mnemonic and passphrase
     seed := bip39.NewSeed(wp.Mnemonic, wp.Passphrase)
     
@@ -103,6 +103,7 @@ func (e Ethereum) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error)
     }
     return wallet, nil
 }
+
 
 // CreateWallet generates a wallet from a given passphrase (password),
 // and returns a Wallet struct containing the mnemonic, private key, public key, and Ethereum address.
