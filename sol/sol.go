@@ -27,13 +27,13 @@ var ErrUnsupportedOperation = errors.New("operation not supported for this block
 
 // WalletFromMnemonic creates a Solana account from a given mnemonic and passphrase (password) using the derivation path "m/44'/501'/0'/0"
 // It returns a Wallet struct containing the mnemonic, private key, public key, and address.
-func (s Solana) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
-	if !bip39.IsMnemonicValid(mnemonic) {
+func (s Solana) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
+	if !bip39.IsMnemonicValid(wp.Mnemonic) {
         return types.Wallet{}, fmt.Errorf("Mnemonic is not valid")
     }
 
 	// Generate seed from mnemonic and passphrase
-    seed := bip39.NewSeed(mnemonic, passphrase)
+    seed := bip39.NewSeed(wp.Mnemonic, wp.Passphrase)
     
     // Generate master key from seed
     masterKey, err := bip32.NewMasterKey(seed)
@@ -76,14 +76,14 @@ func (s Solana) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wa
     }
     // Construct and return the wallet
     return types.Wallet{
-        Mnemonic:   mnemonic,
+        Mnemonic:   wp.Mnemonic,
         PrivateKey: string(privateKeyJSON),
         PublicKey:  solAccount.PublicKey.String(),
         Address:    solAccount.PublicKey.ToBase58(),
 	}, nil
 }
 
-func (s Solana) CreateWallet(passphrase string) (types.Wallet, error) {
+func (s Solana) CreateWallet(cwp types.CWParam) (types.Wallet, error) {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -92,8 +92,13 @@ func (s Solana) CreateWallet(passphrase string) (types.Wallet, error) {
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
+	
+	wp:= types.WalletParam {
+		Mnemonic: mnemonic,
+		Passphrase: cwp.Passphrase,
+	}
     
-    wallet, err:= s.WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= s.WalletFromMnemonic(wp)
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
 	}

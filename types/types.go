@@ -10,8 +10,8 @@ import (
 )
 
 type Blockchain interface {
-    WalletFromMnemonic(mnemonic string, passphrase string) (Wallet, error)
-	CreateWallet(passphrase string) (Wallet, error)
+    WalletFromMnemonic(wp WalletParam) (Wallet, error)
+	CreateWallet(cwp CWParam) (Wallet, error)
     GetAddressFromPrivateKey(privateKey string) (Address, error)
     GetBalance(bp BalanceParam) (Balance, error)
     GetTokenBalance(tbp TBParam) (TokenBalance, error)
@@ -27,6 +27,17 @@ type Wallet struct {
 	PrivateKey string
 	PublicKey  string
 	Address    string
+}
+
+type WalletParam struct {
+	Mnemonic		string
+	Passphrase 		string
+	Network 		string
+}
+
+type CWParam struct{
+	Passphrase 		string
+	Network 		string
 }
 
 type Address struct {
@@ -137,6 +148,7 @@ type TokenInfoParam struct {
 	ABI				[]byte
 
 	Context			context.Context // sol
+	Network 		string
 }
 
 type TokenInfo struct {
@@ -157,12 +169,13 @@ type TokenInfo struct {
 }
 
 type SmartContractCallPayload struct {
-	PrivateKey   string
-	RpcUrl       string
-	ContractAddr string
-	Method       string
-	Params       []interface{}
-	ABI          []byte
+	PrivateKey   	string
+	RpcUrl       	string
+	ContractAddr 	string
+	Method       	string
+	Params       	[]interface{}
+	ABI          	[]byte
+	Network 		string
 }
 
 type TokenMetaData struct {

@@ -33,16 +33,16 @@ type Ethereum struct {
 var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
 // WalletFromMnemonic generates an Ethereum wallet from a given mnemonic and passphrase (password).
 // It returns a Wallet struct containing the mnemonic, private key, public key, and address.
-func (e Ethereum) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
+func (e Ethereum) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
 
     // Verify that the provided mnemonic is valid.  
     // Validity is determined by both the number of words being appropriate, and that all the words in the mnemonic are present in the word list.
-    if !bip39.IsMnemonicValid(mnemonic) {
+    if !bip39.IsMnemonicValid(wp.Mnemonic) {
         fmt.Errorf("Mnemonic is not valid")
     }
 
     // Generate seed from mnemonic and passphrase
-    seed := bip39.NewSeed(mnemonic, passphrase)
+    seed := bip39.NewSeed(wp.Mnemonic, wp.Passphrase)
     
     // Generate master key from seed
     masterKey, err := bip32.NewMasterKey(seed)
@@ -96,7 +96,7 @@ func (e Ethereum) WalletFromMnemonic(mnemonic string, passphrase string) (types.
     address:= crypto.PubkeyToAddress(*publicKeyEcdsa).Hex()
 
     wallet:= types.Wallet {
-        Mnemonic:   mnemonic,
+        Mnemonic:   wp.Mnemonic,
         PrivateKey: privateKey,
         PublicKey:  publicKey,
         Address:    address,
@@ -106,7 +106,7 @@ func (e Ethereum) WalletFromMnemonic(mnemonic string, passphrase string) (types.
 
 // CreateWallet generates a wallet from a given passphrase (password),
 // and returns a Wallet struct containing the mnemonic, private key, public key, and Ethereum address.
-func (e Ethereum) CreateWallet(passphrase string) (types.Wallet, error){
+func (e Ethereum) CreateWallet(cwp types.CWParam) (types.Wallet, error){
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -115,8 +115,13 @@ func (e Ethereum) CreateWallet(passphrase string) (types.Wallet, error){
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
+
+    wp:= types.WalletParam{
+        Mnemonic: mnemonic,
+        Passphrase: cwp.Passphrase,
+    }
     
-    wallet, err:= e.WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= e.WalletFromMnemonic(wp)
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
     }
@@ -125,7 +130,7 @@ func (e Ethereum) CreateWallet(passphrase string) (types.Wallet, error){
 }
 
 // Get address from Private Key
-func (e Ethereum) GetAddressFromPrivKateKey(privateKey string) (types.Address, error) {
+func (e Ethereum) GetAddressFromPrivateKey(privateKey string) (types.Address, error) {
     privKeyBytes, err := hex.DecodeString(privateKey)
     if err != nil {
         return types.Address{}, fmt.Errorf("error Decoding Private Key: ", err)
@@ -447,7 +452,7 @@ func (e Ethereum) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error
 
 // SmartContractCalls performs a generic method call on a specified smart contract.
 // It accepts the contract address, method name, parameters, and ABI, and returns the method results.
-func SmartContractCall(payload types.SmartContractCallPayload) ([]interface{}, error) {
+func (e Ethereum) SmartContractCall(payload types.SmartContractCallPayload) ([]interface{}, error) {
 	client, err := ethclient.Dial(payload.RpcUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Ethereum client: %w", err)

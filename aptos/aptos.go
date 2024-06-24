@@ -23,13 +23,13 @@ type Aptos struct {
 
 var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
 
-func (a Aptos) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
-	if !bip39.IsMnemonicValid(mnemonic) {
+func (a Aptos) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
+	if !bip39.IsMnemonicValid(wp.Mnemonic) {
         log.Fatal("Mnemonic is not valid")
     }
 
 	// Convert mnemonic to seed
-    seed := bip39.NewSeed(mnemonic, passphrase)
+    seed := bip39.NewSeed(wp.Mnemonic, wp.Passphrase)
 
     // Derive the private key using PBKDF2
     derivationPath := "m/44'/637'/0'/0'/0'"
@@ -54,14 +54,14 @@ func (a Aptos) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wal
 	fmt.Println(accountAddress)
 
 	return types.Wallet {
-		Mnemonic: mnemonic,
+		Mnemonic: wp.Mnemonic,
 		PrivateKey: aptos.BytesToHex(privateKey),
 		PublicKey: pubKey.ToHex(),
 		Address: address,
 	}, nil
 }
 
-func (a Aptos) CreateWallet(passphrase string) (types.Wallet, error) {
+func (a Aptos) CreateWallet(cwp types.CWParam) (types.Wallet, error) {
     entropy, err:= bip39.NewEntropy(128) // 12 words
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error creating entropy: %w", err)
@@ -70,8 +70,13 @@ func (a Aptos) CreateWallet(passphrase string) (types.Wallet, error) {
     if err != nil {
         return types.Wallet{}, fmt.Errorf("error generating mnemonic: %w", err)
     }
+
+	wp:= types.WalletParam{
+		Mnemonic: mnemonic,
+		Passphrase: cwp.Passphrase,
+	}
     
-    wallet, err:= a.WalletFromMnemonic(mnemonic, passphrase)
+    wallet, err:= a.WalletFromMnemonic(wp)
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error creating wallet: %w", err)
 	}

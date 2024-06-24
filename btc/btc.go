@@ -24,12 +24,12 @@ type Bitcoin struct {
 
 var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
 // WalletFromMnemonic creates a Bitcoin wallet from a mnemonic and passphrase.
-func (b Bitcoin) WalletFromMnemonic(mnemonic string, passphrase string) (types.Wallet, error) {
-	if !bip39.IsMnemonicValid(mnemonic) {
+func (b Bitcoin) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
+	if !bip39.IsMnemonicValid(wp.Mnemonic) {
 		log.Fatal("Mnemonic is not valid")
 	}
 
-	seed := bip39.NewSeed(mnemonic, passphrase)
+	seed := bip39.NewSeed(wp.Mnemonic, wp.Passphrase)
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("failed to create master key: %w", err)
@@ -75,7 +75,7 @@ func (b Bitcoin) WalletFromMnemonic(mnemonic string, passphrase string) (types.W
 	address:= witnessProgram.EncodeAddress()
 
 	return types.Wallet{
-		Mnemonic:   mnemonic,
+		Mnemonic:   wp.Mnemonic,
 		PrivateKey: wif.String(),
 		PublicKey:  hex.EncodeToString(pubKey.SerializeCompressed()),
 		Address:    address,
@@ -83,7 +83,7 @@ func (b Bitcoin) WalletFromMnemonic(mnemonic string, passphrase string) (types.W
 }
 
 // CreateWallet generates a new wallet.
-func (b Bitcoin) CreateWallet(passphrase string) (types.Wallet, error) {
+func (b Bitcoin) CreateWallet(cwp types.CWParam) (types.Wallet, error) {
 	entropy, err := bip39.NewEntropy(128) // 12 words
 	if err != nil {
 		return types.Wallet{}, fmt.Errorf("error generating entropy: %w", err)
@@ -93,7 +93,12 @@ func (b Bitcoin) CreateWallet(passphrase string) (types.Wallet, error) {
 		return types.Wallet{}, fmt.Errorf("error creating mnemonic: %w", err)
 	}
 
-	return b.WalletFromMnemonic(mnemonic, passphrase)
+	wp:= types.WalletParam {
+		Mnemonic: mnemonic,
+		Passphrase: cwp.Passphrase,
+	}
+
+	return b.WalletFromMnemonic(wp)
 }
 
 // GetAddressFromPrivateKey retrieves the Bitcoin address from a WIF private key.
