@@ -15,7 +15,7 @@ var (
 	bitcoin = btc.Bitcoin{}
 	aptosI = aptos.Aptos{}
 )
-var ErrUnsupportedNetwork = errors.New("network not supported, please pass in network")
+var ErrUnsupportedNetwork = errors.New("unsupported network: the specified network is not recognized. Please ensure that the network name is correct and supported by the application.")
 
 func WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
 	switch wp.Network {
