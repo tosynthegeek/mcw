@@ -2,11 +2,14 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
 	"mcw/aptos"
 	"mcw/btc"
 	"mcw/eth"
 	"mcw/sol"
 	"mcw/types"
+
+	"github.com/tyler-smith/go-bip39"
 )
 
 var (
@@ -16,6 +19,27 @@ var (
 	aptosI = aptos.Aptos{}
 )
 var ErrUnsupportedNetwork = errors.New("unsupported network: the specified network is not recognized. Please ensure that the network name is correct and supported by the application.")
+
+func GenerateMnemonic(bitsize int) (string, error) {
+	// Validate bit size
+	switch bitsize {
+	case 128, 160, 192, 224, 256:
+		// Valid bit sizes
+	default:
+		return "", fmt.Errorf("invalid bitsize: %d; must be 128, 160, 192, 224, or 256", bitsize)
+	}
+
+	entropy, err:= bip39.NewEntropy(bitsize) // 12 words
+    if err != nil {
+        return "", fmt.Errorf("error generating entropy: %w", err)
+    }
+    mnemonic, err:= bip39.NewMnemonic(entropy)
+    if err != nil {
+        return " ", fmt.Errorf("error creating mnemonic: %w", err)
+    }
+
+	return mnemonic, nil
+}
 
 func WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
 	switch wp.Network {
