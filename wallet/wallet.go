@@ -1,8 +1,10 @@
 package wallet
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"mcw/aptos"
 	"mcw/btc"
 	"mcw/eth"
@@ -10,6 +12,9 @@ import (
 	"mcw/sol"
 	"mcw/types"
 
+	Flow "github.com/onflow/flow-go-sdk"
+	"github.com/onflow/flow-go-sdk/crypto"
+	"github.com/onflow/flow-go-sdk/templates"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -211,4 +216,50 @@ func SmartContractCall(payload types.SmartContractCallPayload) (interface{}, err
 		default:
 			return types.TransactionByHash{}, ErrUnsupportedNetwork 
 	}
+}
+
+/* 
+CreateAccountCreationTx prepares a transaction to create a new Flow account
+and calculates the expected address for this account.
+
+Parameters:
+  - wallet: The Flow wallet containing the public key for the new account.
+  - payer: The address of the account that will pay for the account creation.
+  - network: The Flow network (e.g., Mainnet, Testnet) where the account will be created.
+
+Returns:
+  - A pointer to the prepared transaction (*flow.Transaction).
+  - The expected address of the new account (flow.Address).
+  - An error if the transaction preparation or address calculation fails.
+
+Note: This function only prepares the transaction and calculates the expected address.
+The transaction still needs to be signed and submitted to the blockchain to actually
+create the account. The actual address may differ if other accounts are created
+before this transaction is executed. */ 
+func CreateAccountCreationTx(wallet types.Wallet, payer Flow.Address, network Flow.ChainID)  (*Flow.Transaction, Flow.Address, error){
+	publicKeyBytes, err := hex.DecodeString(wallet.PublicKey)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	pubKey, err:= crypto.DecodePublicKey(crypto.ECDSA_P256, publicKeyBytes)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	accountCreationTx, err := templates.CreateAccount([]*Flow.AccountKey{
+        &Flow.AccountKey{
+            PublicKey: pubKey,
+            SigAlgo:   crypto.ECDSA_P256,
+            HashAlgo:  crypto.SHA3_256,
+            Weight:    Flow.AccountKeyWeightThreshold,
+        },
+    }, nil, payer)
+    
+    if err != nil {
+        return nil, Flow.EmptyAddress, fmt.Errorf("failed to create account creation transaction: %w", err)
+    }
+
+    // Calculate the expected address of the new account
+    expectedAddress := Flow.NewAddressGenerator(network).NextAddress()
+    
+    return accountCreationTx, expectedAddress, nil
 }

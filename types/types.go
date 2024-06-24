@@ -33,12 +33,12 @@ type Wallet struct {
 
 type WalletParam struct {
 	Mnemonic		string
-	Passphrase 		string
-	Network 		string
+	Passphrase 		string // Not needed for flow wallet
+	Network 		string // "ethereum", "bitcoin", "solana", "aptos"
 }
 
 type CWParam struct{
-	Passphrase 		string
+	Passphrase 		string // Not needed for flow wallet
 	Network 		string
 }
 
