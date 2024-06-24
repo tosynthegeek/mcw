@@ -7,6 +7,7 @@ import (
 	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/btcsuite/btcd/chaincfg"
+	Flow "github.com/onflow/flow-go-sdk"
 )
 
 type Blockchain interface {
@@ -18,7 +19,8 @@ type Blockchain interface {
     GetTxByHash(hp HashParam) (TransactionByHash, error)
     Transfer(tp TransferParam) (TransferData, error)
     TransferToken(ttp TransferTokenParam) (TransferData, error)
-    SmartContractCall(payload SmartContractCallPayload) ([]interface{}, error)
+    GetTokenInfo(tip TokenInfoParam) (TokenInfo, error)
+	SmartContractCall(payload SmartContractCallPayload) ([]interface{}, error)
 }
 
 // Wallet contains the mnemonic, private key, public key and address.
@@ -109,8 +111,10 @@ type TransactionByHash struct {
 type TransferParam struct {
 	PrivateKey		string
 	Sender 			string
+	FlowSender		Flow.Address
 	EndpointURL		string
 	Recipient		string
+	FlowRecipient	Flow.Address
 	AptosRecipient  aptos.AccountAddress //types.AccountAddress for aptos
 	Amount			uint64
 	GasPrice		*big.Int
@@ -122,6 +126,7 @@ type TransferParam struct {
 	Context 		context.Context
 	AptosConfig		aptos.NetworkConfig
 	BtcConfig		BtcClientConfig
+	Script			[]byte
 }
 
 type TransferData struct {

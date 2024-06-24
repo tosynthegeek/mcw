@@ -6,6 +6,7 @@ import (
 	"mcw/aptos"
 	"mcw/btc"
 	"mcw/eth"
+	"mcw/flow"
 	"mcw/sol"
 	"mcw/types"
 
@@ -17,6 +18,7 @@ var (
 	solana = sol.Solana{}
 	bitcoin = btc.Bitcoin{}
 	aptosI = aptos.Aptos{}
+	flowI = flow.Flow{}
 )
 var ErrUnsupportedNetwork = errors.New("unsupported network: the specified network is not recognized. Please ensure that the network name is correct and supported by the application.")
 
@@ -51,6 +53,8 @@ func WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
         	return aptosI.WalletFromMnemonic(wp)
 		case "btc", "bitcoin":
         	return bitcoin.WalletFromMnemonic(wp)
+		case "flow":
+        	return flowI.WalletFromMnemonic(wp)
 		default:
 			return types.Wallet{}, ErrUnsupportedNetwork 
 	}
@@ -66,6 +70,8 @@ func CreateWallet(cwp types.CWParam) (types.Wallet, error) {
         	return aptosI.CreateWallet(cwp)
 		case "btc", "bitcoin":
         	return bitcoin.CreateWallet(cwp)
+		case "flow":
+        	return flowI.CreateWallet(cwp)
 		default:
 			return types.Wallet{}, ErrUnsupportedNetwork 
 	}
@@ -81,6 +87,8 @@ func GetAddressFromPrivateKey(network string, privateKey string) (types.Address,
         	return aptosI.GetAddressFromPrivateKey(privateKey)
 		case "btc", "bitcoin":
         	return bitcoin.GetAddressFromPrivateKey(privateKey)
+		case "flow":
+        	return flowI.GetAddressFromPrivateKey(privateKey)
 		default:
 			return types.Address{}, ErrUnsupportedNetwork 
 	}
@@ -96,6 +104,8 @@ func GetBalance(bp types.BalanceParam) (types.Balance, error) {
         	return aptosI.GetBalance(bp)
 		case "btc", "bitcoin":
         	return bitcoin.GetBalance(bp)
+		case "flow":
+        	return flowI.GetBalance(bp)
 		default:
 			return types.Balance{}, ErrUnsupportedNetwork 
 	}
@@ -111,6 +121,8 @@ func GetTokenBalance(tbp types.TBParam) (types.TokenBalance, error) {
         	return aptosI.GetTokenBalance(tbp)
 		case "btc", "bitcoin":
         	return bitcoin.GetTokenBalance(tbp)
+		case "flow":
+        	return flowI.GetTokenBalance(tbp)
 		default:
 			return types.TokenBalance{}, ErrUnsupportedNetwork 
 	}
@@ -126,6 +138,8 @@ func GetTxByHash(hp types.HashParam) (types.TransactionByHash, error) {
         	return aptosI.GetTxByHash(hp)
 		case "btc", "bitcoin":
         	return bitcoin.GetTxByHash(hp)
+		case "flow":
+        	return flowI.GetTxByHash(hp)
 		default:
 			return types.TransactionByHash{}, ErrUnsupportedNetwork 
 	}
@@ -141,6 +155,8 @@ func Transfer(tp types.TransferParam) (types.TransferData, error) {
         	return aptosI.Transfer(tp)
 		case "btc", "bitcoin":
         	return bitcoin.Transfer(tp)
+		case "flow":
+        	return flowI.Transfer(tp)
 		default:
 			return types.TransferData{}, ErrUnsupportedNetwork 
 	}
@@ -156,6 +172,8 @@ func TransferToken(ttp types.TransferTokenParam) (types.TransferData, error) {
         	return aptosI.TransferToken(ttp)
 		case "btc", "bitcoin":
         	return bitcoin.TransferToken(ttp)
+		case "flow":
+        	return flowI.TransferToken(ttp)
 		default:
 			return types.TransferData{}, ErrUnsupportedNetwork 
 	}
@@ -171,6 +189,8 @@ func GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error) {
         	return aptosI.GetTokenInfo(tip)
 		case "btc", "bitcoin":
         	return bitcoin.GetTokenInfo(tip)
+		case "flow":
+        	return flowI.GetTokenInfo(tip)
 		default:
 			return types.TokenInfo{}, ErrUnsupportedNetwork 
 	}
@@ -186,6 +206,8 @@ func SmartContractCall(payload types.SmartContractCallPayload) (interface{}, err
         	return aptosI.SmartContractCall(payload)
 		case "btc", "bitcoin":
         	return bitcoin.SmartContractCall(payload)
+		case "flow":
+        	return flowI.SmartContractCall(payload)
 		default:
 			return types.TransactionByHash{}, ErrUnsupportedNetwork 
 	}

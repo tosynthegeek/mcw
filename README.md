@@ -43,6 +43,10 @@ if err != nil {
     fmt.Println("Mnemonic:", mnemonic)
 }
 ```
+- Output
+```
+Mnemonic: 
+```
 
 ## Error Handling
 
