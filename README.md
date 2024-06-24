@@ -82,7 +82,7 @@ fmt.Printf("Address: %s\n", wallet.Address)
     Mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about,
     PrivateKey: 5e62984d8bda6a40bbdb08496b1d3f6f5e1be8b1fe4a575d18b9e0f5934eac4d,
     PublicKey: 0360ec40d4ec3132b3c5d6d9b4cddf8e17bb2c0e9e20d69e2e0bb9f9d7f9d20d6f,
-    Address: "0x1234567890123456789012345678901234567890"
+    Address: 0x1234567890123456789012345678901234567890
 ```
 
 ### CreateWallet
@@ -106,7 +106,7 @@ if err != nil {
     Mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about,
     PrivateKey: 5e62984d8bda6a40bbdb08496b1d3f6f5e1be8b1fe4a575d18b9e0f5934eac4d,
     PublicKey: 0360ec40d4ec3132b3c5d6d9b4cddf8e17bb2c0e9e20d69e2e0bb9f9d7f9d20d6f,
-    Address: "0x1234567890123456789012345678901234567890"
+    Address: 0x1234567890123456789012345678901234567890
 ```
 
 ## Error Handling
