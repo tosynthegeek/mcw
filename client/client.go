@@ -2,8 +2,9 @@ package client
 
 import (
 	"fmt"
-	"mcw/types"
 	"os"
+
+	"github.com/tosynthegeek/mcw/types"
 
 	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/btcsuite/btcd/rpcclient"
