@@ -325,6 +325,7 @@ func (s Solana) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
 
 
 	mint:= common.PublicKeyFromString(tip.TokenAddress)
+	
 	// // mintAddress:= mint.ToBase58()
 	// mintAccountInfo, err := client.GetAccountInfo(ctx, tokenAddress)
     // if err != nil {
