@@ -24,7 +24,7 @@ type Bitcoin struct {
 }
 
 var ErrUnsupportedOperation = errors.New("operation not supported for this blockchain")
-// WalletFromMnemonic creates a Bitcoin wallet from a mnemonic and passphrase.
+// WalletFromMnemonic creates a Bitcoin wallet from a mnemonic and passphrase..
 func (b Bitcoin) WalletFromMnemonic(wp types.WalletParam) (types.Wallet, error) {
 	if !bip39.IsMnemonicValid(wp.Mnemonic) {
 		log.Fatal("Mnemonic is not valid")
