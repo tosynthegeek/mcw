@@ -397,3 +397,5 @@ var ErrUnsupportedNetwork = errors.New(
 ```
 
 ## Contribute
+
+Open to contributionas. Couple of contributions to be made. Check out the contribution guidelines
