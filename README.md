@@ -30,6 +30,20 @@ import "github.com/tosynthegeek/mcw/wallet"
 - GetTokenInfo
 - SmartContractCall
 
+| Method                   | Ethereum | Solana | Bitcoin | Aptos | Flow |
+| ------------------------ | -------- | ------ | ------- | ----- | ---- |
+| GenerateMnemonic         | ✓        | ✓      | ✓       | ✓     | ✓    |
+| WalletFromMnemonic       | ✓        | ✓      | ✓       | ✓     | ✓    |
+| CreateWallet             | ✓        | ✓      | ✓       | ✓     | ✓    |
+| GetAddressFromPrivateKey | ✓        | ✓      | ✓       | ✓     | ✗    |
+| GetBalance               | ✓        | ✓      | ✓       | ✓     | ✓    |
+| GetTokenBalance          | ✓        | ✓      | ✗       | ✓     | ✗    |
+| GetTxByHash              | ✓        | ✓      | ✓       | ✓     | ✓    |
+| Transfer                 | ✓        | ✓      | ✓       | ✓     | ✓    |
+| TransferToken            | ✓        | ✓      | ✗       | ✗     | ✗    |
+| GetTokenInfo             | ✓        | ✓      | ✗       | ✗     | ✗    |
+| SmartContractCall        | ✓        | ✗      | ✗       | ✗     | ✗    |
+
 ### GenerateMnemonic
 
 Generates a BIP-39 mnemonic phrase based on the specified entropy bit size. EThe mnemonic phrase is generated based on a specific bit size of entropy (randomness). 128 bits of entropy gives a 12-word mnemonic. 160 bits of entropy gives a 15-word mnemonic. 192 bits of entropy gives an 18-word mnemonic. 224 bits of entropy gives a 21-word mnemonic. 256 bits of entropy gives a 24-word mnemonic.
