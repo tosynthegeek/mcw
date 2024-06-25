@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"mcw/sol/internal"
-	"mcw/types"
+
+	"github.com/tosynthegeek/mcw/sol/internal"
+	"github.com/tosynthegeek/mcw/types"
 
 	solClient "github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
@@ -325,7 +326,7 @@ func (s Solana) GetTokenInfo(tip types.TokenInfoParam) (types.TokenInfo, error){
 
 
 	mint:= common.PublicKeyFromString(tip.TokenAddress)
-	
+
 	// // mintAddress:= mint.ToBase58()
 	// mintAccountInfo, err := client.GetAccountInfo(ctx, tokenAddress)
     // if err != nil {

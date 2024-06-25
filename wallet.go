@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/tosynthegeek/mcw/flow"
-
 	"github.com/tosynthegeek/mcw/aptos"
 	"github.com/tosynthegeek/mcw/btc"
 	"github.com/tosynthegeek/mcw/eth"
+	"github.com/tosynthegeek/mcw/flow"
 	"github.com/tosynthegeek/mcw/sol"
 	"github.com/tosynthegeek/mcw/types"
 
