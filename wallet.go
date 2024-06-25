@@ -1,4 +1,4 @@
-package mcw
+package wallet
 
 import (
 	"encoding/hex"
