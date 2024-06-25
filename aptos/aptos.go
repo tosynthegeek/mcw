@@ -8,8 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"mcw/client"
-	"mcw/types"
+
+	"github.com/tosynthegeek/mcw/client"
+	"github.com/tosynthegeek/mcw/types"
 
 	"github.com/aptos-labs/aptos-go-sdk"
 	"github.com/aptos-labs/aptos-go-sdk/crypto"

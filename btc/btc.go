@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"mcw/client"
-	"mcw/types"
+
+	"github.com/tosynthegeek/mcw/client"
+	"github.com/tosynthegeek/mcw/types"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"

@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"mcw/client"
-	"mcw/eth/internal"
-	types "mcw/types"
+
+	"github.com/tosynthegeek/mcw/client"
+	"github.com/tosynthegeek/mcw/eth/internal"
+	types "github.com/tosynthegeek/mcw/types"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"

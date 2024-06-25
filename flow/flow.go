@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"mcw/types"
+
+	"github.com/tosynthegeek/mcw/types"
 
 	"github.com/onflow/cadence"
 	"github.com/onflow/flow-go-sdk"
