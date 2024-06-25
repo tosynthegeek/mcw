@@ -13,7 +13,8 @@ MCW is a Go package that provides a unified interface for managing wallets, gene
 ## Installation
 
 ```go
-go get ...
+go get github.com/tosynthegeek/mcw
+go get github.com/tosynthegeek/mcw/wallet
 ```
 
 ## Usage
