@@ -26,32 +26,20 @@ import "github.com/tosynthegeek/mcw/wallet"
 
 ## Methods
 
-- [GenerateMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#generatemnemonic)
-- [WalletFromMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#walletfrommnemonic)
-- [CreateWallet](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createwallet)
-- [GetAddressFromPrivateKey](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getaddressfromprivatekey)
-- [GetBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getbalance)
-- [GetTokenBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokenbalance)
-- [GetTxByHash](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettxbyhash)
-- [Transfer](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfer)
-- [TransferToken](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfertoken)
-- [GetTokenInfo](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokeninfo)
-- [SmartContractCall](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#smartcontractcall)
-- [CreateAccountCreationTx](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createaccountcreationtx)
-
-| Method                   | Ethereum | Solana | Bitcoin | Aptos | Flow |
-| ------------------------ | -------- | ------ | ------- | ----- | ---- |
-| GenerateMnemonic         | ✓        | ✓      | ✓       | ✓     | ✓    |
-| WalletFromMnemonic       | ✓        | ✓      | ✓       | ✓     | ✓    |
-| CreateWallet             | ✓        | ✓      | ✓       | ✓     | ✓    |
-| GetAddressFromPrivateKey | ✓        | ✓      | ✓       | ✓     | ✗    |
-| GetBalance               | ✓        | ✓      | ✓       | ✓     | ✓    |
-| GetTokenBalance          | ✓        | ✓      | ✗       | ✓     | ✗    |
-| GetTxByHash              | ✓        | ✓      | ✓       | ✓     | ✓    |
-| Transfer                 | ✓        | ✓      | ✓       | ✓     | ✓    |
-| TransferToken            | ✓        | ✓      | ✗       | ✗     | ✗    |
-| GetTokenInfo             | ✓        | ✓      | ✗       | ✗     | ✗    |
-| SmartContractCall        | ✓        | ✗      | ✗       | ✗     | ✗    |
+| Method                                                                                                                    | Ethereum | Solana | Bitcoin | Aptos | Flow |
+| ------------------------------------------------------------------------------------------------------------------------- | -------- | ------ | ------- | ----- | ---- |
+| [GenerateMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#generatemnemonic)                 | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [WalletFromMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#walletfrommnemonic)             | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [CreateWallet](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createwallet)                         | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [GetAddressFromPrivateKey](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getaddressfromprivatekey) | ✓        | ✓      | ✓       | ✓     | ✗    |
+| [GetBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getbalance)                             | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [GetTokenBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokenbalance)                   | ✓        | ✓      | ✗       | ✓     | ✗    |
+| [GetTxByHash](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettxbyhash)                           | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [Transfer](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfer)                                 | ✓        | ✓      | ✓       | ✓     | ✓    |
+| [TransferToken](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfertoken)                       | ✓        | ✓      | ✗       | ✗     | ✗    |
+| [GetTokenInfo](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokeninfo)                         | ✓        | ✓      | ✗       | ✗     | ✗    |
+| [SmartContractCall](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#smartcontractcall)               | ✓        | ✗      | ✗       | ✗     | ✗    |
+| [CreateAccountCreationTx](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createaccountcreationtx)   | ✗        | ✗      | ✗       | ✗     | ✓    |
 
 ### GenerateMnemonic
 
