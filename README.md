@@ -409,4 +409,4 @@ var ErrUnsupportedNetwork = errors.New(
 
 ## Contribute
 
-Open to contributionas. Couple of contributions to be made. Check out the contribution guidelines
+Open to contributionas. Couple of contributions to be made. Check out the [contribution guidelines](https://github.com/tosynthegeek/multichain-wallet/blob/main/CONTRIBUTING.md)
