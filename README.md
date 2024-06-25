@@ -2,6 +2,14 @@
 
 MCW is a Go package that provides a unified interface for managing wallets, generating mnemonics, and interacting with different blockchain networks: Ethereum, Solana, Bitcoin, and Aptos.The interface includes functionality for creating and managing wallets, handling transactions, and performing other blockchain-related operations.
 
+# Table of Contents
+
+- [Installation](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#installation)
+- [Usage](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#usage)
+- [Methods](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#methods)
+- [Error Handling](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#error-handling)
+- [Contribute](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#contribute)
+
 ## Installation
 
 ```go
@@ -18,17 +26,18 @@ import "github.com/tosynthegeek/mcw/wallet"
 
 ## Methods
 
-- GenerateMnemonic
-- WalletFromMnemonic
-- CreateWallet
-- GetAddressFromPrivateKey
-- GetBalance
-- GetTokenBalance
-- GetTxByHash
-- Transfer
-- TransferToken
-- GetTokenInfo
-- SmartContractCall
+- [GenerateMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#generatemnemonic)
+- [WalletFromMnemonic](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#walletfrommnemonic)
+- [CreateWallet](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createwallet)
+- [GetAddressFromPrivateKey](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getaddressfromprivatekey)
+- [GetBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#getbalance)
+- [GetTokenBalance](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokenbalance)
+- [GetTxByHash](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettxbyhash)
+- [Transfer](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfer)
+- [TransferToken](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#transfertoken)
+- [GetTokenInfo](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#gettokeninfo)
+- [SmartContractCall](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#smartcontractcall)
+- [CreateAccountCreationTx](https://github.com/tosynthegeek/multichain-wallet?tab=readme-ov-file#createaccountcreationtx)
 
 | Method                   | Ethereum | Solana | Bitcoin | Aptos | Flow |
 | ------------------------ | -------- | ------ | ------- | ----- | ---- |
