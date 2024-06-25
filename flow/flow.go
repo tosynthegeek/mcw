@@ -26,7 +26,7 @@ var ErrUnsupportedOperation = errors.New("operation not supported for this block
 /* CreateWalletfromMnemonic generates a Flow wallet from a mnemonic phrase.
 This function does not create an on-chain Flow account or address.
 Instead, it generates a private/public key pair from the mnemonic and
-prepares the information needed to create an account later.
+prepares the information needed to create an account later...
 
 A key pair alone does not constitute an account or address on Flow.
 An actual account is created through a separate transaction on the blockchain.
