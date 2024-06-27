@@ -341,7 +341,7 @@ Token Info: {
 
 ### SmartContractCall
 
-SmartContractCall executes a smart contract function on a specified network. It takes in network, contract address, function name, parameters, and other details in a types.SmartContractCallPayload struct. It returns an interface{} which can be type-asserted to the expected return type.
+`SmartContractCall` executes a smart contract function on a specified network. It takes in network, contract address, function name, parameters, and other details in a types.`SmartContractCallPayload` struct. It returns an `interface{}` which can be type-asserted to the expected return type.
 It supports only Ethereum at the moment.
 
 ```go
@@ -368,7 +368,7 @@ Result: 1000000000000000000
 
 ### CreateAccountCreationTx
 
-CreateAccountCreationTx prepares a transaction to create a new Flow account and calculates the expected address for this account. It takes in a wallet, payer address, and network. It returns a pointer to the prepared transaction, the expected address of the new account, and an error if any.
+`CreateAccountCreationTx` prepares a transaction to create a new Flow account and calculates the expected address for this account. It takes in a `wallet`, payer address, and network. It returns a pointer to the prepared transaction, the expected address of the new account, and an error if any.
 
 This function is specific to the Flow blockchain.
 
@@ -400,7 +400,7 @@ Expected Address: 0x9876543210987654
 
 ## Error Handling
 
-Errors in the interface are returned in Go's idiomatic way as the second return value. The error messages provide detailed information about what went wrong. The error ErrUnsupportedNetwork is returned when an unsupported network is specified.
+Errors in the interface are returned in Go's idiomatic way as the second return value. The error messages provide detailed information about what went wrong. The error `ErrUnsupportedNetwork` is returned when an unsupported network is specified.
 
 ```go
 var ErrUnsupportedNetwork = errors.New(
@@ -410,4 +410,4 @@ var ErrUnsupportedNetwork = errors.New(
 
 ## Contribute
 
-Open to contributionas. Couple of contributions to be made. Check out the [contribution guidelines](https://github.com/tosynthegeek/multichain-wallet/blob/main/CONTRIBUTING.md)
+Open to contributions. Couple of contributions to be made. Check out the [contribution guidelines](https://github.com/tosynthegeek/multichain-wallet/blob/main/CONTRIBUTING.md)
